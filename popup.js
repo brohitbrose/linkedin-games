@@ -10,8 +10,12 @@ polyfilledBrowser.tabs.query({ active: true, currentWindow: true })
       if (isQueens) {
         enableButton(button);
         button.addEventListener("click", () => {
-          // TODO: consider more structure in msg arg
-          polyfilledBrowser.tabs.sendMessage(tab.id, 0);
+          polyfilledBrowser.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              queensPopupButtonOnClick();
+            }
+          });
         });
       } else if (isZip) {
         enableButton(button);
