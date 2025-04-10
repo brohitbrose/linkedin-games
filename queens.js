@@ -1,3 +1,13 @@
+// Entrypoint
+const polyfilledBrowser = (typeof browser !== 'undefined') ? browser : chrome;
+polyfilledBrowser.runtime.onMessage.addListener(m => {
+  if (m == 0) {
+    queensPopupButtonOnClick();
+  } else {
+    throw new Error("Unreachable");
+  }
+});
+
 // Button onClick() logic.
 function queensPopupButtonOnClick() {
   const queensGridDiv = getQueensGridDiv();
