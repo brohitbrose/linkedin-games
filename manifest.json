@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Queens Solver",
+  "version": "1.0",
+  "description": "Solver for the daily LinkedIn Queens Puzzle.",
+  "permissions": ["scripting", "activeTab"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.linkedin.com/games/queens/*"],
+      "js": ["queens.js"]
+    },
+    {
+      "matches": ["*://*.linkedin.com/games/zip/*"],
+      "js": ["zip.js"]
+    }
+  ],
+  "icons": {
+    "48": "icon.png"
+  }
+}
