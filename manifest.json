@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LinkedIn Games Solver",
   "version": "1.0",
-  "description": "Solvers for the daily LinkedIn Queens Puzzle.",
+  "description": "Solvers for the daily LinkedIn puzzle games",
   "permissions": ["scripting", "activeTab"],
   "action": {
     "default_popup": "popup.html",

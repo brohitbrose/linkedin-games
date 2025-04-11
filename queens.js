@@ -96,22 +96,21 @@ function clickQueens(clickTargets, queenLocations) {
   }
 }
 
-const commonClickArgs = { bubbles: true, cancelable: true, view: window};
-
 function doOneClick(clickTarget) {
+  const commonClickArgs = { bubbles: true, cancelable: true, view: window};
   clickTarget.dispatchEvent(new MouseEvent('mousedown', commonClickArgs));
   clickTarget.dispatchEvent(new MouseEvent('mouseup', commonClickArgs));
   clickTarget.dispatchEvent(new MouseEvent('click', commonClickArgs));
 }
 
-const square_roots = new Map([[16, 4], [25, 5], [36, 6], [49, 7], [64, 8],
+class Board {
+
+  static #square_roots = new Map([[16, 4], [25, 5], [36, 6], [49, 7], [64, 8],
     [81, 9], [100, 10], [121, 11], [144, 12],
     [169, 13], [196, 14], [225, 15], [256, 16]]);
 
-class Board {
-
   constructor(array) {
-    this.n = square_roots.get(array.length);
+    this.n = Board.#square_roots.get(array.length);
     if (!this.n) {
       throw new Error("Invalid input array length " + array.length);
     }
@@ -145,7 +144,7 @@ class Board {
     // cell count every time we place down a queen. Two problems, though:
     // - Repeatedly reevaluating the optimal color adds complexity/overhead.
     // - Our place() methods circumvent marking most cells as "not-free" once we
-    // place a queen (diagonal queen neighbors are the sole exception).
+    //   place a queen (diagonal queen neighbors are the sole exception).
     // We opt for the board state optimizations over the enhanced heuristic.
     return [...result.entries()].sort(([, a], [, b]) => a.length - b.length);
   }
