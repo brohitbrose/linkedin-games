@@ -9,6 +9,7 @@ polyfilledBrowser.tabs.query({ active: true, currentWindow: true })
 
       if (isQueens) {
         enableButton(button);
+        button.textContent = 'Solve Queens';
         button.addEventListener("click", () => {
           polyfilledBrowser.scripting.executeScript({
             target: { tabId: tab.id },
@@ -19,6 +20,7 @@ polyfilledBrowser.tabs.query({ active: true, currentWindow: true })
         });
       } else if (isZip) {
         enableButton(button);
+        button.textContent = 'Solve Zip';
         button.addEventListener("click", () => {
           polyfilledBrowser.tabs.sendMessage(tab.id, 1);
         });
