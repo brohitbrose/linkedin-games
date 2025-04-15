@@ -1,5 +1,6 @@
 const button = document.querySelector("button");
 
+// Support both browser.* and chrome.* APIs.
 const polyfilledBrowser = (typeof browser !== 'undefined') ? browser : chrome;
 polyfilledBrowser.tabs.query({ active: true, currentWindow: true })
     .then(([tab]) => {
@@ -8,26 +9,29 @@ polyfilledBrowser.tabs.query({ active: true, currentWindow: true })
       const isZip = url.includes("linkedin.com/games/zip");
 
       if (isQueens) {
-        enableButton(button);
-        button.textContent = 'Solve Queens';
-        button.addEventListener("click", () => {
-          polyfilledBrowser.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-              queensPopupButtonOnClick();
-            }
-          });
+        enableButtonExecuteScript(button, 'Solve Queens', tab, () => {
+          queensPopupButtonOnClick();
         });
       } else if (isZip) {
-        enableButton(button);
-        button.textContent = 'Solve Zip';
-        button.addEventListener("click", () => {
-          polyfilledBrowser.tabs.sendMessage(tab.id, 1);
+        enableButtonExecuteScript(button, 'Solve Zip', tab, () => {
+          zipPopupButtonOnClick();
         });
       } else {
         disableButton(button);
       }
     });
+
+function enableButtonExecuteScript(button, textContent, tab,
+    script) {
+  enableButton(button);
+  button.textContent = textContent;
+  button.addEventListener("click", () => {
+    polyfilledBrowser.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: script
+    });
+  });
+}
 
 function enableButton(button) {
   button.disabled = false;
