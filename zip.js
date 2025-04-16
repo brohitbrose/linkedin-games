@@ -1,6 +1,15 @@
 // Button onClick() logic.
 function zipPopupButtonOnClick() {
-  const zipGridDiv = getZipGridDiv();
+  // Extract relevant div from page.
+  const gridDiv = getZipGridDiv();
+  // div -> [ZipGrid, [div's clickable elements]].
+  const gridPkg = transformZipGridDiv(gridDiv);
+  const grid = gridPkg[0];
+  const clickTargets = gridPkg[1];
+  // Determine desired clicks.
+  const cellSequence = grid.solve();
+  // Execute desired clicks.
+  visitCells(clickTargets, cellSequence);
 }
 
 // Returns the possibly iframe-embedded div corresponding to the Zip grid.
@@ -9,7 +18,7 @@ function getZipGridDiv() {
   if (!gridDiv) {
     const frame = document.querySelector("iframe");
     const frameDoc = frame.contentDocument || frame.contentWindow.document;
-    gridDiv = document.querySelector(".grid-game-board");
+    gridDiv = frameDoc.querySelector(".grid-game-board");
   }
   return gridDiv;
 }
@@ -26,19 +35,48 @@ function transformZipGridDiv(zipGridDiv) {
   
   const filtered = Array.from(zipGridDiv.children)
       .filter(x => x.attributes && x.attributes.getNamedItem("data-cell-idx"));
-  
   const clickTargets = new Array(filtered.length);
 
-  const arr = filtered.map(x => {
-      const nnm = x.attributes;
-      const id = parseInt(nnm.getNamedItem('data-cell-idx').value);
-      const clazz = nnm.getNamedItem('class').value;
-      const colorIdx = clazz.indexOf('cell-color-') + 'cell-color-'.length;
-      const color = parseInt(clazz.substring(colorIdx));
-      clickTargets[id] = x;
-      return {"idx": id, "color": color};
-    });
-  return [new ZipGrid(rows, cols, arr), clickTargets];
+  filtered.forEach(x => {
+    const nnm = x.attributes;
+    const id = parseInt(nnm.getNamedItem('data-cell-idx').value);
+    // Handle circled number.
+    const content = x.querySelector('.trail-cell-content');
+    if (content) {
+      const circledNumber = parseInt(content.textContent);
+      numberedCells[circledNumber - 1] = id;
+    }
+    // Handle down wall
+    const downWall = x.querySelector('.trail-cell-wall--down');
+    if (downWall) {
+      downWalls.push(id);
+    }
+    // Handle right wall.
+    const rightWall = x.querySelector('.trail-cell-wall--right')
+    if (rightWall) {
+      rightWalls.push(id);
+    }
+    clickTargets[id] = x;
+  });
+  return [
+    new ZipGrid(rows, cols, numberedCells, downWalls, rightWalls),
+    clickTargets
+  ];
+}
+
+// Synchronously dispatches the computed click events one by one.
+function visitCells(clickTargets, cellSequence) {
+  for (const loc of cellSequence) {
+    const clickTarget = clickTargets[loc];
+    doOneClick(clickTarget);
+  }
+}
+
+function doOneClick(clickTarget) {
+  const commonClickArgs = { bubbles: true, cancelable: true, view: window};
+  clickTarget.dispatchEvent(new MouseEvent('mousedown', commonClickArgs));
+  clickTarget.dispatchEvent(new MouseEvent('mouseup', commonClickArgs));
+  clickTarget.dispatchEvent(new MouseEvent('click', commonClickArgs));
 }
 
 class ZipGrid {
@@ -66,7 +104,7 @@ class ZipGrid {
    */
   #cellStatuses;
 
-  constructor(m, n, numberedCells) {
+  constructor(m, n, numberedCells, downWalls, rightWalls) {
     this.#m = m;
     this.#n = n;
     this.#size = m * n;
@@ -75,11 +113,11 @@ class ZipGrid {
     this.#current = 1;
 
     this.#cellStatuses = this.#constructCellStatuses(m, n, this.#size,
-        numberedCells);
+        numberedCells, downWalls, rightWalls);
     this.#cellStatuses[this.#head].setVisited(true);
   }
 
-  #constructCellStatuses(m, n, size, numberedCells) {
+  #constructCellStatuses(m, n, size, numberedCells, downWalls, rightWalls) {
     const result = Array.from({ length: size }, () => new ZipGridCellStatus());
     // Decrement top and bottom border degrees once
     for (let i = 0; i < n; i++) {
@@ -91,8 +129,18 @@ class ZipGrid {
       result[n * i].decrementDegree();
       result[n * i + n - 1].decrementDegree();
     }
-    // TODO: walls
-
+    // Down walls
+    for (const walledCell of downWalls) {
+      const cellStatus = result[walledCell];
+      cellStatus.addDownWall();
+      cellStatus.decrementDegree();
+    }
+    // Right walls
+    for (const walledCell of rightWalls) {
+      const cellStatus = result[walledCell];
+      cellStatus.addRightWall();
+      cellStatus.decrementDegree();
+    }
     // Numbered cells
     for (let i = 0; i < numberedCells.length; i++) {
       result[numberedCells[i]].label(i + 1);
@@ -114,7 +162,6 @@ class ZipGrid {
   //  maximally the board dimension, which I've never seen exceed 11 in a real
   //  puzzle. In Zip, it's the number of cells, which I've seen go up to 64.
   #backtrack(depth, result, degreeModifications) {
-    // this.renderDegrees();
     if (depth === this.#size) {
       return true;
     }
@@ -416,22 +463,23 @@ class ZipGrid {
     return -1;
   }
 
-  renderDegrees() {
-    console.log("====================")
-    for (let i = 0; i < this.#m; i++) {
-      for (let j = 0; j < this.#n; j++) {
-        const k = this.#m * i + j;
-        const cellInfo = this.#cellStatuses[k];
-        if (cellInfo.isVisited()) {
-          process.stdout.write('#');
-        } else {
-          process.stdout.write('' + cellInfo.getDegree());
-        }
-      }
-      console.log();
-    }
-    console.log("====================")
-  }
+  // renderDegrees() {
+  //   console.log("====================")
+  //   for (let i = 0; i < this.#m; i++) {
+  //     let rowStr = '';
+  //     for (let j = 0; j < this.#n; j++) {
+  //       const k = this.#m * i + j;
+  //       const cellInfo = this.#cellStatuses[k];
+  //       if (cellInfo.isVisited()) {
+  //         rowStr += '#';
+  //       } else {
+  //         rowStr += ('' + cellInfo.getDegree());
+  //       }
+  //     }
+  //     console.log(rowStr);
+  //   }
+  //   console.log("====================")
+  // }
 
 }
 
@@ -491,12 +539,8 @@ class ZipGridCellStatus {
     return this.#hasRightWall;
   }
 
-  addUpWall() {
+  addRightWall() {
     this.#hasRightWall = true;
   }
 
 }
-
-// Main
-const zipGrid = new ZipGrid(6, 6, [14, 32, 29, 3, 6, 21, 25, 10]);
-console.log(zipGrid.solve());
