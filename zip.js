@@ -65,11 +65,15 @@ function transformZipGridDiv(zipGridDiv) {
   ];
 }
 
+/**
+ * Returns only the elements of the cell visit sequence that are final elements
+ * of same-direction runs.
+ */
 function compressSequence(sequence) {
+  const result = [];
   if (sequence.length === 0) {
-    return [];
+    return result;
   }
-  const result = [sequence[0]];
   let i = 1;
   while (i < sequence.length) {
     const runStart = i - 1;
