@@ -404,24 +404,6 @@ class ZipGrid {
     moveStatus.setVisited(false);
   }
 
-  // renderDegrees() {
-  //   console.log("====================")
-  //   for (let i = 0; i < this.#m; i++) {
-  //     let rowStr = '';
-  //     for (let j = 0; j < this.#n; j++) {
-  //       const k = this.#m * i + j;
-  //       const cellInfo = this.#cellStatuses[k];
-  //       if (cellInfo.isVisited()) {
-  //         rowStr += '#';
-  //       } else {
-  //         rowStr += ('' + cellInfo.getDegree());
-  //       }
-  //     }
-  //     console.log(rowStr);
-  //   }
-  //   console.log("====================")
-  // }
-
 }
 
 class ZipGridCellStatus {
