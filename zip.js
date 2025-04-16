@@ -3,7 +3,7 @@ function zipPopupButtonOnClick() {
   const zipGridDiv = getZipGridDiv();
 }
 
-// Returns the possibly iframe-embedded div corresponding to the Zip board.
+// Returns the possibly iframe-embedded div corresponding to the Zip grid.
 function getZipGridDiv() {
   let gridDiv = document.querySelector(".grid-game-board");
   if (!gridDiv) {
@@ -14,16 +14,21 @@ function getZipGridDiv() {
   return gridDiv;
 }
 
-// Transforms the "queens-grid"-ID'd div into a tuple:
-// - result[0] is a Board seeded from the div
+// Transforms the div containing the Zip grid into a tuple:
+// - result[0] is a ZipGrid seeded from the div
 // - result[1] is a 1D array of the clickable elements in the div.
 function transformZipGridDiv(zipGridDiv) {
   const rows = parseInt(zipGridDiv.style.getPropertyValue("--rows"));
   const cols = parseInt(zipGridDiv.style.getPropertyValue("--cols"));
+  const numberedCells = [];
+  const downWalls = [];
+  const rightWalls = [];
+  
+  const filtered = Array.from(zipGridDiv.children)
+      .filter(x => x.attributes && x.attributes.getNamedItem("data-cell-idx"));
+  
+  const clickTargets = new Array(filtered.length);
 
-  const cells = Array.from(zipGridDiv.children)
-      .filter(x => x.attributes && x,attributes.getNamedItem("data-cell-idx"));
-  const clickTargets = Array(filtered.length);
   const arr = filtered.map(x => {
       const nnm = x.attributes;
       const id = parseInt(nnm.getNamedItem('data-cell-idx').value);
@@ -33,7 +38,7 @@ function transformZipGridDiv(zipGridDiv) {
       clickTargets[id] = x;
       return {"idx": id, "color": color};
     });
-  return [new Board(arr), clickTargets];
+  return [new ZipGrid(rows, cols, arr), clickTargets];
 }
 
 class ZipGrid {
@@ -71,74 +76,81 @@ class ZipGrid {
 
     this.#cellStatuses = this.#constructCellStatuses(m, n, this.#size,
         numberedCells);
-    this.#visitCell(this.#head);
+    this.#cellStatuses[this.#head].setVisited(true);
   }
 
-
   #constructCellStatuses(m, n, size, numberedCells) {
-    const result = Array.from({ length: size }, () => {
-      return [false, -1, 4, false, false];
-    });
+    const result = Array.from({ length: size }, () => new ZipGridCellStatus());
+    // Decrement top and bottom border degrees once
     for (let i = 0; i < n; i++) {
-      result[i][2] -= 1;
-      result[size - n + i][2] -= 1;
+      result[i].decrementDegree();
+      result[size - n + i].decrementDegree();
     }
+    // Decrement left and right border degrees once (thus each corner twice)
     for (let i = 0; i < m; i++) {
-      result[n * i][2] -= 1;
-      result[n * i + n - 1][2] -= 1;
+      result[n * i].decrementDegree();
+      result[n * i + n - 1].decrementDegree();
     }
-    // FIXME: walls
+    // TODO: walls
+
+    // Numbered cells
     for (let i = 0; i < numberedCells.length; i++) {
-      result[numberedCells[i]][1] = i + 1;
+      result[numberedCells[i]].label(i + 1);
     }
     return result;
   }
 
   solve() {
     const result = [this.#head];
-    if (!this.#backtrack(1, this.#head, result)) {
+    const degreeModifications = []; // stack
+    if (this.#backtrack(1, result, degreeModifications)) {
       return result;
     } else {
       throw new Error("No solutions found");
     }
   }
 
-  #backtrack(depth, result) {
+  // TODO: Implement this iteratively. In Queens, the number of stack frames is
+  //  maximally the board dimension, which I've never seen exceed 11 in a real
+  //  puzzle. In Zip, it's the number of cells, which I've seen go up to 64.
+  #backtrack(depth, result, degreeModifications) {
+    // this.renderDegrees();
     if (depth === this.#size) {
       return true;
     }
     const lastMove = result[result.length - 1];
+    let shortCircuit = false;
     if (this.#tryDirection(this.#canVisitUp(lastMove), lastMove - this.#n,
-        depth, result)) {
+        depth, result, degreeModifications, this.#visitUp)) {
       return true;
     }
     if (this.#tryDirection(this.#canVisitDown(lastMove), lastMove + this.#n,
-        depth, result)) {
+        depth, result, degreeModifications, this.#visitDown)) {
       return true;
     }
     if (this.#tryDirection(this.#canVisitLeft(lastMove), lastMove - 1,
-        depth, result)) {
+        depth, result, degreeModifications, this.#visitLeft)) {
       return true;
     }
     if (this.#tryDirection(this.#canVisitRight(lastMove), lastMove + 1,
-        depth, result)) {
+        depth, result, degreeModifications, this.#visitRight)) {
       return true;
     }
     return false;
   }
 
-  #tryDirection(canVisit, move, depth, result) {
+  #tryDirection(canVisit, move, depth, path, degreeModifications, doVisit) {
     if (!canVisit) {
       return false;
     }
-    this.#visit(move);
-    result.push(move);
-    const success = this.#backtrack(depth + 1, move, result);
-    this.#unvisit();
+    doVisit.call(this, move, path[path.length - 1], degreeModifications);
+    path.push(move);
+    const success = this.#backtrack(depth + 1, path, degreeModifications);
+    this.#unvisit(move, degreeModifications);
     if (success) {
       return true;
     } else {
-      result.pop();
+      path.pop();
       return false;
     }
   }
@@ -149,170 +161,342 @@ class ZipGrid {
    * - The "above cell" (hereafter "dst") exists in this grid
    * - dst has already been visited
    * - There is a wall between src and dst
-   * - dst contains a number that we cannot reach yet
+   * - dst contains a circled number that we cannot reach yet
    * - Visiting dst would "cut off" any unvisited non-terminal cells by leaving
    *   only 1 unvisited cell attached to them, and similarly for the terminal
    *   cell except the check condition is 0 not 1.
    */
   #canVisitUp(src) {
     const dst = src - this.#n;
+    const dstStatus = this.#cellStatuses[dst];
     return dst >= 0
-        && !this.#cellIsVisited(dst)
-        && !this.#cellHasDownWall(dst)
-        && !(this.#cellContent[dst] > this.#current + 1)
-        && !this.#upVisitWillIsolate(src);
+        && !dstStatus.isVisited()
+        && !dstStatus.hasDownWall()
+        && !(dstStatus.getContent() > this.#current + 1)
+        && !this.#visitWillIsolateDown(src)
+        && !this.#visitWillIsolateLeft(src)
+        && !this.#visitWillIsolateRight(src);
   }
 
   /** Same as #canVisitUp, but for the cell below the provided one. */
   #canVisitDown(src) {
     const dst = src + this.#n;
+    const dstStatus = this.#cellStatuses[dst];
+    const srcStatus = this.#cellStatuses[src];
     return dst < this.#size
-        && !this.#cellIsVisited(dst)
-        && !this.#cellHasDownWall(src)
-        && !(this.#cellContent[dst] > this.#current + 1)
-        && !this.#downVisitWillIsolate(src);
+        && !dstStatus.isVisited()
+        && !srcStatus.hasDownWall()
+        && !(dstStatus.getContent() > this.#current + 1)
+        && !this.#visitWillIsolateUp(src)
+        && !this.#visitWillIsolateLeft(src)
+        && !this.#visitWillIsolateRight(src);
   }
 
   /** Same as #canVisitUp, but for the cell left of the provided one. */
   #canVisitLeft(src) {
     const dst = src - 1;
-    return src % this.#n != 0
-        && !this.#cellIsVisited(dst)
-        && !this.#cellHasRightWall(dst)
-        && !(this.#cellContent[dst] > this.#current + 1)
-        && !this.#leftVisitWillIsolate(src);
+    const dstStatus = this.#cellStatuses[dst];
+    return src % this.#n !== 0
+        && !dstStatus.isVisited()
+        && !dstStatus.hasRightWall()
+        && !(dstStatus.getContent() > this.#current + 1)
+        && !this.#visitWillIsolateUp(src)
+        && !this.#visitWillIsolateDown(src)
+        && !this.#visitWillIsolateRight(src);
   }
 
   /** Same as #canVisitUp, but for the cell right of the provided one. */
   #canVisitRight(src) {
     const dst = src + 1;
-    return src % this.#n != this.#n - 1
-        && !this.#cellIsVisited(dst)
-        && !this.#cellHasRightWall(src)
-        && !(this.#cellContent[dst] > this.#current + 1)
-        && !this.#rightVisitWillIsolate(src);
-  }
-
-  #upVisitWillIsolate(src) {
-    return visitWillIsolateDown(src)
-        || visitWillIsolateLeft(src)
-        || visitWillIsolateRight(src);
-  }
-
-  #downVisitWillIsolate(src) {
-    return visitWillIsolateUp(src)
-        || visitWillIsolateLeft(src)
-        || visitWillIsolateRight(src);
-  }
-
-  #leftVisitWillIsolate(src) {
-    return visitWillIsolateUp(src)
-        || visitWillIsolateDown(src)
-        || visitWillIsolateRight(src);
-  }
-
-  #rightVisitWillIsolate(src) {
-    return visitWillIsolateUp(src)
-        || visitWillIsolateDown(src)
-        || visitWillIsolateLeft(src);
+    const dstStatus = this.#cellStatuses[dst];
+    const srcStatus = this.#cellStatuses[src];
+    return src % this.#n !== this.#n - 1
+        && !dstStatus.isVisited()
+        && !srcStatus.hasRightWall()
+        && !(dstStatus.getContent() > this.#current + 1)
+        && !this.#visitWillIsolateUp(src)
+        && !this.#visitWillIsolateDown(src)
+        && !this.#visitWillIsolateLeft(src);
   }
 
   #visitWillIsolateUp(src) {
-    const up = src - this.#n;
-    return up >= 0
-        && !this.#cellIsVisited(up)
-        && !this.#cellHasDownWall(up)
-        && this.#visitWillIsolate(up);
+    return this.#visitWillIsolate(this.#visitWillImpactUpDegree(src));
   }
 
   #visitWillIsolateDown(src) {
-    const down = src + this.#n;
-    return down < this.#size
-        && !this.#cellIsVisited(down)
-        && !this.#cellHasDownWall(src)
-        && this.#visitWillIsolate(down);
+    return this.#visitWillIsolate(this.#visitWillImpactDownDegree(src));
   }
 
   #visitWillIsolateLeft(src) {
-    if (src % this.#n != 0) {
-      const left = src - 1;
-      if (!this.#cellIsVisited(left) && !this.#cellHasRightWall(left)
-          && this.#visitWillIsolate(left)) {
-        return true;
-      }
-    }
-    return false;
+    return this.#visitWillIsolate(this.#visitWillImpactLeftDegree(src));
   }
 
   #visitWillIsolateRight(src) {
-    if (src % this.#n != this.#n - 1) {
-      const right = src + 1;
-      if (!this.#cellIsVisited(right) && !this.#cellHasRightWall(src)
-          && this.#visitWillIsolate(right)) {
-        return true;
-      }
-    }
-    return false;
+    return this.#visitWillIsolate(this.#visitWillImpactRightDegree(src));
   }
 
   #visitWillIsolate(cell) {
-    const degree = this.#cellDegree(cell);
+    if (cell < 0) {
+      return false;
+    }
+    const cellStatus = this.#cellStatuses[cell];
+    const degree = cellStatus.getDegree();
     return (cell === this.#foot && degree === 1)
-        || (cell !== this.#foot && degree == 2);
+        || (cell !== this.#foot && degree === 2);
   }
 
-  #visit(dst, src) {
+  #visitUp(dst, src, degreeModifications) {
+    const dstStatus = this.#cellStatuses[dst];
     // Mark cell as visited.
-    this.#visitCell(dst);
-    // Reduce degree counts where applicable, tracking any reductions made to
-    // facilitate backtracking.
-
+    dstStatus.setVisited(true);
+    // If dst is a circled number, update bookkeeping.
+    const dstContent = dstStatus.getContent();
+    if (dstContent > 0) {
+      this.#current = dstContent; 
+    }
+    // Check if degrees need to be modified.
+    let cell = this.#visitWillImpactDownDegree(src);
+    const newModifications = [];
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    cell = this.#visitWillImpactLeftDegree(src);
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    cell = this.#visitWillImpactRightDegree(src);
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    degreeModifications.push(newModifications);
   }
 
-
-
-  #unvisit() {
-
+  #visitDown(dst, src, degreeModifications) {
+    const dstStatus = this.#cellStatuses[dst];
+    // Mark cell as visited.
+    dstStatus.setVisited(true);
+    // If dst is a circled number, update bookkeeping.
+    const dstContent = dstStatus.getContent();
+    if (dstContent > 0) {
+      this.#current = dstContent; 
+    }
+    // Check if degrees need to be modified.
+    let cell = this.#visitWillImpactUpDegree(src);
+    const newModifications = [];
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    cell = this.#visitWillImpactLeftDegree(src);
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    cell = this.#visitWillImpactRightDegree(src);
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    degreeModifications.push(newModifications);
   }
 
-  #cellIsVisited(i) {
-    return this.#cellStatuses[i][0];
+  #visitLeft(dst, src, degreeModifications) {
+    const dstStatus = this.#cellStatuses[dst];
+    // Mark cell as visited.
+    dstStatus.setVisited(true);
+    // If dst is a circled number, update bookkeeping.
+    const dstContent = dstStatus.getContent();
+    if (dstContent > 0) {
+      this.#current = dstContent; 
+    }
+    // Check if degrees need to be modified.
+    let cell = this.#visitWillImpactUpDegree(src);
+    const newModifications = [];
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    cell = this.#visitWillImpactDownDegree(src);
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    cell = this.#visitWillImpactRightDegree(src);
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    degreeModifications.push(newModifications);
   }
 
-  #visitCell(i) {
-    this.#cellStatuses[i][0] = true;
+  #visitRight(dst, src, degreeModifications) {
+    const dstStatus = this.#cellStatuses[dst];
+    // Mark cell as visited.
+    dstStatus.setVisited(true);
+    // If dst is a circled number, update bookkeeping.
+    const dstContent = dstStatus.getContent();
+    if (dstContent > 0) {
+      this.#current = dstContent; 
+    }
+    // Check if degrees need to be modified.
+    let cell = this.#visitWillImpactUpDegree(src);
+    const newModifications = [];
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    cell = this.#visitWillImpactDownDegree(src);
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    cell = this.#visitWillImpactLeftDegree(src);
+    if (cell >= 0) {
+      this.#cellStatuses[cell].decrementDegree();
+      newModifications.push(cell);
+    }
+    degreeModifications.push(newModifications);
   }
 
-  #cellContent(i) {
-    return this.#cellStatuses[i][1];
+  #unvisit(move, degreeModifications) {
+    // Possibly revert degree modifications.
+    const modifications = degreeModifications.pop();
+    for (const cell of modifications) {
+      this.#cellStatuses[cell].incrementDegree();
+    }
+    // Possibly revert last-found circled number, 
+    const moveStatus = this.#cellStatuses[move];
+    const moveContent = moveStatus.getContent();
+    if (moveContent > 0) {
+      this.#current = moveContent - 1;
+    }
+    // Mark cell as unvisited.
+    moveStatus.setVisited(false);
   }
 
-  #addCellContent(i, content) {
-    this.#cellStatuses[i][1] = content;
+  #visitWillImpactUpDegree(src) {
+    const up = src - this.#n;
+    const upStatus = this.#cellStatuses[up];
+    return up >= 0 && !upStatus.isVisited() && !upStatus.hasDownWall()
+        ? up : -1;
   }
 
-  #cellDegree(i) {
-    return this.#cellStatuses[i][2];
+  #visitWillImpactDownDegree(src) {
+    const down = src + this.#n;
+    const downStatus = this.#cellStatuses[down];
+    const srcStatus = this.#cellStatuses[src];
+    return down < this.#size && !downStatus.isVisited()
+          && !srcStatus.hasDownWall()
+        ? down : -1;
   }
 
-  #decrementCellDegree(i) {
-    this.#cellStatuses[i][2] -= 1;
+  #visitWillImpactLeftDegree(src) {
+    if (src % this.#n !== 0) {
+      const left = src - 1;
+      const leftStatus = this.#cellStatuses[left];
+      if (!leftStatus.isVisited() && !leftStatus.hasRightWall()) {
+        return left;
+      }
+    }
+    return -1;
   }
 
-  #cellHasRightWall(i) {
-    return this.#cellStatuses[i][3];
+  #visitWillImpactRightDegree(src) {
+    if (src % this.#n !== this.#n - 1) {
+      const right = src + 1;
+      const rightStatus = this.#cellStatuses[right];
+      const srcStatus = this.#cellStatuses[src];
+      if (!rightStatus.isVisited() && !srcStatus.hasRightWall()) {
+        return right;
+      }
+    }
+    return -1;
   }
 
-  #cellHasDownWall(i) {
-    return this.#cellStatuses[i][4];
+  renderDegrees() {
+    console.log("====================")
+    for (let i = 0; i < this.#m; i++) {
+      for (let j = 0; j < this.#n; j++) {
+        const k = this.#m * i + j;
+        const cellInfo = this.#cellStatuses[k];
+        if (cellInfo.isVisited()) {
+          process.stdout.write('#');
+        } else {
+          process.stdout.write('' + cellInfo.getDegree());
+        }
+      }
+      console.log();
+    }
+    console.log("====================")
   }
 
-  log() {
-    console.log(this.#cellStatuses);
+}
+
+class ZipGridCellStatus {
+
+  #isVisited;
+  #content;
+  #degree;
+  #hasDownWall;
+  #hasRightWall;
+
+  constructor() {
+    this.#isVisited = false;
+    this.#content = -1;
+    this.#degree = 4;
+    this.#hasDownWall = false;
+    this.#hasRightWall = false;
+  }
+
+  isVisited() {
+    return this.#isVisited;
+  }
+
+  setVisited(visited) {
+    this.#isVisited = visited;
+  }
+
+  label(number) {
+    this.#content = number;
+  }
+
+  getContent() {
+    return this.#content;
+  }
+
+  getDegree() {
+    return this.#degree;
+  }
+
+  decrementDegree() {
+    this.#degree--;
+  }
+
+  incrementDegree() {
+    this.#degree++;
+  }
+
+  hasDownWall() {
+    return this.#hasDownWall;
+  }
+
+  addDownWall() {
+    this.#hasDownWall = true;
+  }
+
+  hasRightWall() {
+    return this.#hasRightWall;
+  }
+
+  addUpWall() {
+    this.#hasRightWall = true;
   }
 
 }
 
 // Main
 const zipGrid = new ZipGrid(6, 6, [14, 32, 29, 3, 6, 21, 25, 10]);
-zipGrid.log();
+console.log(zipGrid.solve());
