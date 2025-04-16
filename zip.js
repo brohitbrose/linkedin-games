@@ -293,93 +293,42 @@ class ZipGrid {
   }
 
   #visitUp(dst, src, degreeModifications) {
-    const dstStatus = this.#cellStatuses[dst];
-    // Mark cell as visited.
-    dstStatus.setVisited(true);
-    // If dst is a circled number, update bookkeeping.
-    const dstContent = dstStatus.getContent();
-    if (dstContent > 0) {
-      this.#current = dstContent; 
-    }
-    // Check if degrees need to be modified.
-    let cell = this.#visitWillImpactDownDegree(src);
-    const newModifications = [];
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    cell = this.#visitWillImpactLeftDegree(src);
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    cell = this.#visitWillImpactRightDegree(src);
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    degreeModifications.push(newModifications);
+    this.#visitDirection(dst, src, degreeModifications,
+      [
+        this.#visitWillImpactDownDegree,
+        this.#visitWillImpactLeftDegree,
+        this.#visitWillImpactRightDegree
+      ]);
   }
 
   #visitDown(dst, src, degreeModifications) {
-    const dstStatus = this.#cellStatuses[dst];
-    // Mark cell as visited.
-    dstStatus.setVisited(true);
-    // If dst is a circled number, update bookkeeping.
-    const dstContent = dstStatus.getContent();
-    if (dstContent > 0) {
-      this.#current = dstContent; 
-    }
-    // Check if degrees need to be modified.
-    let cell = this.#visitWillImpactUpDegree(src);
-    const newModifications = [];
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    cell = this.#visitWillImpactLeftDegree(src);
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    cell = this.#visitWillImpactRightDegree(src);
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    degreeModifications.push(newModifications);
+    this.#visitDirection(dst, src, degreeModifications,
+      [
+        this.#visitWillImpactUpDegree,
+        this.#visitWillImpactLeftDegree,
+        this.#visitWillImpactRightDegree
+      ]);
   }
 
   #visitLeft(dst, src, degreeModifications) {
-    const dstStatus = this.#cellStatuses[dst];
-    // Mark cell as visited.
-    dstStatus.setVisited(true);
-    // If dst is a circled number, update bookkeeping.
-    const dstContent = dstStatus.getContent();
-    if (dstContent > 0) {
-      this.#current = dstContent; 
-    }
-    // Check if degrees need to be modified.
-    let cell = this.#visitWillImpactUpDegree(src);
-    const newModifications = [];
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    cell = this.#visitWillImpactDownDegree(src);
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    cell = this.#visitWillImpactRightDegree(src);
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    degreeModifications.push(newModifications);
+    this.#visitDirection(dst, src, degreeModifications,
+      [
+        this.#visitWillImpactUpDegree,
+        this.#visitWillImpactDownDegree,
+        this.#visitWillImpactRightDegree
+      ]);
   }
 
   #visitRight(dst, src, degreeModifications) {
+    this.#visitDirection(dst, src, degreeModifications,
+      [
+        this.#visitWillImpactUpDegree,
+        this.#visitWillImpactDownDegree,
+        this.#visitWillImpactLeftDegree
+      ]);
+  }
+
+  #visitDirection(dst, src, degreeModifications, impactFns) {
     const dstStatus = this.#cellStatuses[dst];
     // Mark cell as visited.
     dstStatus.setVisited(true);
@@ -389,39 +338,15 @@ class ZipGrid {
       this.#current = dstContent; 
     }
     // Check if degrees need to be modified.
-    let cell = this.#visitWillImpactUpDegree(src);
     const newModifications = [];
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    cell = this.#visitWillImpactDownDegree(src);
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
-    }
-    cell = this.#visitWillImpactLeftDegree(src);
-    if (cell >= 0) {
-      this.#cellStatuses[cell].decrementDegree();
-      newModifications.push(cell);
+    for (const impactFn of impactFns) {
+      const cell = impactFn.call(this, src);
+      if (cell >= 0) {
+        this.#cellStatuses[cell].decrementDegree();
+        newModifications.push(cell);
+      }
     }
     degreeModifications.push(newModifications);
-  }
-
-  #unvisit(move, degreeModifications) {
-    // Possibly revert degree modifications.
-    const modifications = degreeModifications.pop();
-    for (const cell of modifications) {
-      this.#cellStatuses[cell].incrementDegree();
-    }
-    // Possibly revert last-found circled number, 
-    const moveStatus = this.#cellStatuses[move];
-    const moveContent = moveStatus.getContent();
-    if (moveContent > 0) {
-      this.#current = moveContent - 1;
-    }
-    // Mark cell as unvisited.
-    moveStatus.setVisited(false);
   }
 
   #visitWillImpactUpDegree(src) {
@@ -461,6 +386,22 @@ class ZipGrid {
       }
     }
     return -1;
+  }
+
+  #unvisit(move, degreeModifications) {
+    // Possibly revert degree modifications.
+    const modifications = degreeModifications.pop();
+    for (const cell of modifications) {
+      this.#cellStatuses[cell].incrementDegree();
+    }
+    // Possibly revert last-found circled number, 
+    const moveStatus = this.#cellStatuses[move];
+    const moveContent = moveStatus.getContent();
+    if (moveContent > 0) {
+      this.#current = moveContent - 1;
+    }
+    // Mark cell as unvisited.
+    moveStatus.setVisited(false);
   }
 
   // renderDegrees() {
