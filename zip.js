@@ -8,8 +8,9 @@ function zipPopupButtonOnClick() {
   const clickTargets = gridPkg[1];
   // Determine desired clicks.
   const cellSequence = grid.solve();
+  const compressedSequence = compressSequence(cellSequence);
   // Execute desired clicks.
-  visitCells(clickTargets, cellSequence);
+  visitCells(clickTargets, compressedSequence);
 }
 
 // Returns the possibly iframe-embedded div corresponding to the Zip grid.
@@ -62,6 +63,25 @@ function transformZipGridDiv(zipGridDiv) {
     new ZipGrid(rows, cols, numberedCells, downWalls, rightWalls),
     clickTargets
   ];
+}
+
+function compressSequence(sequence) {
+  if (sequence.length === 0) {
+    return [];
+  }
+  const result = [sequence[0]];
+  let i = 1;
+  while (i < sequence.length) {
+    const runStart = i - 1;
+    let diff = sequence[i] - sequence[runStart];
+    // Seek i to the last element where sequence[i] - sequence[i-1] === diff.
+    while (i + 1 < sequence.length && sequence[i + 1] - sequence[i] === diff) {
+      i++;
+    }
+    result.push(sequence[i]);
+    i++;
+  }
+  return result;
 }
 
 // Synchronously dispatches the computed click events one by one.
@@ -214,75 +234,81 @@ class ZipGrid {
    *   cell except the check condition is 0 not 1.
    */
   #canVisitUp(src) {
-    const dst = src - this.#n;
-    const dstStatus = this.#cellStatuses[dst];
-    return dst >= 0
-        && !dstStatus.isVisited()
-        && !dstStatus.hasDownWall()
-        && !(dstStatus.getContent() > this.#current + 1)
-        && !this.#visitWillIsolateDown(src)
-        && !this.#visitWillIsolateLeft(src)
-        && !this.#visitWillIsolateRight(src);
+    return this.#canVisitDirection(src,
+        s => s - this.#n,
+        (d, s) => d >= 0,
+        (ds, ss) => ds.hasDownWall(),
+        [this.#visitIsolatesDown, this.#visitIsolatesLeft,
+            this.#visitIsolatesRight]);
   }
 
   /** Same as #canVisitUp, but for the cell below the provided one. */
   #canVisitDown(src) {
-    const dst = src + this.#n;
-    const dstStatus = this.#cellStatuses[dst];
-    const srcStatus = this.#cellStatuses[src];
-    return dst < this.#size
-        && !dstStatus.isVisited()
-        && !srcStatus.hasDownWall()
-        && !(dstStatus.getContent() > this.#current + 1)
-        && !this.#visitWillIsolateUp(src)
-        && !this.#visitWillIsolateLeft(src)
-        && !this.#visitWillIsolateRight(src);
+    return this.#canVisitDirection(src,
+        s => s + this.#n,
+        (d, s) => d < this.#size,
+        (ds, ss) => ss.hasDownWall(),
+        [this.#visitIsolatesUp, this.#visitIsolatesLeft,
+            this.#visitIsolatesRight]);
   }
 
   /** Same as #canVisitUp, but for the cell left of the provided one. */
   #canVisitLeft(src) {
-    const dst = src - 1;
-    const dstStatus = this.#cellStatuses[dst];
-    return src % this.#n !== 0
-        && !dstStatus.isVisited()
-        && !dstStatus.hasRightWall()
-        && !(dstStatus.getContent() > this.#current + 1)
-        && !this.#visitWillIsolateUp(src)
-        && !this.#visitWillIsolateDown(src)
-        && !this.#visitWillIsolateRight(src);
+    return this.#canVisitDirection(src,
+        s => s - 1,
+        (d, s) => s % this.#n !== 0,
+        (ds, ss) => ds.hasRightWall(),
+        [this.#visitIsolatesUp, this.#visitIsolatesDown,
+            this.#visitIsolatesRight]);
   }
 
   /** Same as #canVisitUp, but for the cell right of the provided one. */
   #canVisitRight(src) {
-    const dst = src + 1;
+    return this.#canVisitDirection(src,
+        s => s + 1,
+        (d, s) => s % this.#n !== this.#n - 1,
+        (ds, ss) => ss.hasRightWall(),
+        [this.#visitIsolatesUp, this.#visitIsolatesDown,
+            this.#visitIsolatesLeft]);
+  }
+
+  #canVisitDirection(src, computeDst, checkDstSrcBounds, checkDstSrcWall,
+      willIsolateFns) {
+    const dst = computeDst.call(this, src);
     const dstStatus = this.#cellStatuses[dst];
     const srcStatus = this.#cellStatuses[src];
-    return src % this.#n !== this.#n - 1
+    let withoutIsolation = checkDstSrcBounds.call(this, dst, src)
         && !dstStatus.isVisited()
-        && !srcStatus.hasRightWall()
-        && !(dstStatus.getContent() > this.#current + 1)
-        && !this.#visitWillIsolateUp(src)
-        && !this.#visitWillIsolateDown(src)
-        && !this.#visitWillIsolateLeft(src);
+        && !checkDstSrcWall.call(this, dstStatus, srcStatus)
+        && !(dstStatus.getContent() > this.#current + 1);
+    if (!withoutIsolation) {
+      return false;
+    }
+    for (const willIsolateFn of willIsolateFns) {
+      if (willIsolateFn.call(this, src)) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  #visitWillIsolateUp(src) {
-    return this.#visitWillIsolate(this.#visitWillImpactUpDegree(src));
+  #visitIsolatesUp(src) {
+    return this.#visitIsolates(this.#visitImpactsUpDegree(src));
   }
 
-  #visitWillIsolateDown(src) {
-    return this.#visitWillIsolate(this.#visitWillImpactDownDegree(src));
+  #visitIsolatesDown(src) {
+    return this.#visitIsolates(this.#visitImpactsDownDegree(src));
   }
 
-  #visitWillIsolateLeft(src) {
-    return this.#visitWillIsolate(this.#visitWillImpactLeftDegree(src));
+  #visitIsolatesLeft(src) {
+    return this.#visitIsolates(this.#visitImpactsLeftDegree(src));
   }
 
-  #visitWillIsolateRight(src) {
-    return this.#visitWillIsolate(this.#visitWillImpactRightDegree(src));
+  #visitIsolatesRight(src) {
+    return this.#visitIsolates(this.#visitImpactsRightDegree(src));
   }
 
-  #visitWillIsolate(cell) {
+  #visitIsolates(cell) {
     if (cell < 0) {
       return false;
     }
@@ -294,38 +320,26 @@ class ZipGrid {
 
   #visitUp(dst, src, degreeModifications) {
     this.#visitDirection(dst, src, degreeModifications,
-      [
-        this.#visitWillImpactDownDegree,
-        this.#visitWillImpactLeftDegree,
-        this.#visitWillImpactRightDegree
-      ]);
+        [this.#visitImpactsDownDegree, this.#visitImpactsLeftDegree,
+            this.#visitImpactsRightDegree]);
   }
 
   #visitDown(dst, src, degreeModifications) {
     this.#visitDirection(dst, src, degreeModifications,
-      [
-        this.#visitWillImpactUpDegree,
-        this.#visitWillImpactLeftDegree,
-        this.#visitWillImpactRightDegree
-      ]);
+        [this.#visitImpactsUpDegree, this.#visitImpactsLeftDegree,
+            this.#visitImpactsRightDegree]);
   }
 
   #visitLeft(dst, src, degreeModifications) {
     this.#visitDirection(dst, src, degreeModifications,
-      [
-        this.#visitWillImpactUpDegree,
-        this.#visitWillImpactDownDegree,
-        this.#visitWillImpactRightDegree
-      ]);
+        [this.#visitImpactsUpDegree, this.#visitImpactsDownDegree,
+            this.#visitImpactsRightDegree]);
   }
 
   #visitRight(dst, src, degreeModifications) {
     this.#visitDirection(dst, src, degreeModifications,
-      [
-        this.#visitWillImpactUpDegree,
-        this.#visitWillImpactDownDegree,
-        this.#visitWillImpactLeftDegree
-      ]);
+        [this.#visitImpactsUpDegree, this.#visitImpactsDownDegree,
+          this.#visitImpactsLeftDegree]);
   }
 
   #visitDirection(dst, src, degreeModifications, impactFns) {
@@ -349,23 +363,23 @@ class ZipGrid {
     degreeModifications.push(newModifications);
   }
 
-  #visitWillImpactUpDegree(src) {
+  #visitImpactsUpDegree(src) {
     const up = src - this.#n;
     const upStatus = this.#cellStatuses[up];
     return up >= 0 && !upStatus.isVisited() && !upStatus.hasDownWall()
         ? up : -1;
   }
 
-  #visitWillImpactDownDegree(src) {
+  #visitImpactsDownDegree(src) {
     const down = src + this.#n;
     const downStatus = this.#cellStatuses[down];
     const srcStatus = this.#cellStatuses[src];
-    return down < this.#size && !downStatus.isVisited()
-          && !srcStatus.hasDownWall()
+    return down < this.#size
+          && !downStatus.isVisited() && !srcStatus.hasDownWall()
         ? down : -1;
   }
 
-  #visitWillImpactLeftDegree(src) {
+  #visitImpactsLeftDegree(src) {
     if (src % this.#n !== 0) {
       const left = src - 1;
       const leftStatus = this.#cellStatuses[left];
@@ -376,7 +390,7 @@ class ZipGrid {
     return -1;
   }
 
-  #visitWillImpactRightDegree(src) {
+  #visitImpactsRightDegree(src) {
     if (src % this.#n !== this.#n - 1) {
       const right = src + 1;
       const rightStatus = this.#cellStatuses[right];
