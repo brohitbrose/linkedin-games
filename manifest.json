@@ -5,20 +5,20 @@
   "description": "Solvers for the daily LinkedIn puzzle games",
   "permissions": ["scripting", "activeTab"],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_popup": "dist/popup.html",
+    "default_icon": "src/assets/icon.png"
   },
   "content_scripts": [
     {
       "matches": ["*://*.linkedin.com/games/queens*"],
-      "js": ["queens.js"]
+      "js": ["dist/queens.js"]
     },
     {
       "matches": ["*://*.linkedin.com/games/zip*"],
-      "js": ["zip.js"]
+      "js": ["dist/zip.js"]
     }
   ],
   "icons": {
-    "48": "icon.png"
+    "48": "src/assets/icon.png"
   }
 }

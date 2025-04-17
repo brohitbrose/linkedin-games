@@ -1,68 +1,5 @@
-// Button onClick() logic.
-function queensPopupButtonOnClick() {
-  // Extract relevant div from page.
-  const gridDiv = getQueensGridDiv();
-  // div -> [QueensGrid, [div's clickable elements]].
-  const gridPkg = transformQueensGridDiv(gridDiv);
-  const grid = gridPkg[0];
-  const clickTargets = gridPkg[1];
-  // Determine desired clicks.
-  const queenLocations = grid.solve();
-  // Execute desired clicks.
-  // TODO: Consider asynchronicity. Everything through grid.solve() is extremely
-  //  fast (<1ms). clickQueens() simulates clicking DOM elements 2n times where
-  //  n is the grid dimenion. This process takes ~5ms on my Mac, but could this
-  //  be too fast for the site's logic sometimes?
-  clickQueens(clickTargets, queenLocations);
-}
-
-// Returns the possibly iframe-embedded div corresponding to the Queens grid.
-function getQueensGridDiv() {
-  let gridDiv = document.getElementById("queens-grid");
-  if (!gridDiv) {
-    const frame = document.querySelector("iframe");
-    const frameDoc = frame.contentDocument || frame.contentWindow.document;
-    gridDiv = frameDoc.getElementById("queens-grid");
-  }
-  return gridDiv;
-}
-
-// Transforms the "queens-grid"-ID'd div into a tuple:
-// - result[0] is a QueensGrid seeded from the div
-// - result[1] is a 1D array of the clickable elements in the div.
-function transformQueensGridDiv(queensGridDiv) {
-  // TODO: consider a flatMap() variant
-  const filtered = Array.from(queensGridDiv.children)
-      .filter(x => x.attributes && x.attributes.getNamedItem("data-cell-idx"));
-  const clickTargets = new Array(filtered.length);
-  const arr = filtered.map(x => {
-      const nnm = x.attributes;
-      const id = parseInt(nnm.getNamedItem('data-cell-idx').value);
-      const clazz = nnm.getNamedItem('class').value;
-      const colorIdx = clazz.indexOf('cell-color-') + 'cell-color-'.length;
-      const color = parseInt(clazz.substring(colorIdx));
-      clickTargets[id] = x;
-      return {"idx": id, "color": color};
-    });
-  return [new QueensGrid(arr), clickTargets];
-}
-
-// Synchronously dispatches the computed click events one by one.
-function clickQueens(clickTargets, queenLocations) {
-  for (const loc of queenLocations) {
-    const clickTarget = clickTargets[loc];
-    // Blank -> X
-    doOneClick(clickTarget);
-    // X -> Queen
-    doOneClick(clickTarget);
-  }
-}
-
-function doOneClick(clickTarget) {
-  const commonClickArgs = { bubbles: true, cancelable: true, view: window};
-  clickTarget.dispatchEvent(new MouseEvent('mousedown', commonClickArgs));
-  clickTarget.dispatchEvent(new MouseEvent('mouseup', commonClickArgs));
-  clickTarget.dispatchEvent(new MouseEvent('click', commonClickArgs));
+export function solveQueens(cells) {
+  return new QueensGrid(cells).solve();
 }
 
 /** Class representing the grid state of a Queens puzzle. */
@@ -132,7 +69,7 @@ class QueensGrid {
     return [...result.entries()].sort(([, a], [, b]) => a.length - b.length);
   }
 
-  // Returns an Array of this.#n integers such that each element i indicates that
+  // Returns an Array of this.#n integers such that each element i indicates
   // the cell with attribute 'data-cell-idx'=i should be marked as a queen.
   solve() {
     const result = [];
