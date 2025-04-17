@@ -20,8 +20,8 @@ Setting up a watcher / dev server seemed like overkill for this simple of a plug
 
 ### Firefox
 
-Load a temporary extension [here](about:debugging#/runtime/this-firefox) (this link will only work in Firefox) via `manifest.json`.
+Visit `about:debugging#/runtime/this-firefox` in your Firefox URL bar, then load a temporary extension via `manifest.json`.
 
 ### Chrome
 
-With `Developer mode` enabled, load an unpacked extension [here](chrome://extensions/) (this link will only work in Chrome) via the top-level directory (probably `linkedin-games`).
+Visit `chrome://extensions/` in your Chrome URL bar. With `Developer mode` enabled, load an unpacked extension via the source code's top-level folder.
