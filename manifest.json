@@ -11,11 +11,11 @@
   "content_scripts": [
     {
       "matches": ["*://*.linkedin.com/games/queens*"],
-      "js": ["queens.js"]
+      "js": ["dist/queens.js"]
     },
     {
       "matches": ["*://*.linkedin.com/games/zip*"],
-      "js": ["zip.js"]
+      "js": ["dist/zip.js"]
     }
   ],
   "icons": {
