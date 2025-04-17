@@ -5,7 +5,7 @@ import { solveQueens } from './solver.js';
 export function queensPopupButtonOnClick() {
   // Extract relevant div from page.
   const gridDiv = getQueensGridDiv();
-  // div -> [QueensGrid, [div's clickable elements]].
+  // div -> [QueensGrid args, [div's clickable elements]].
   const gridPkg = transformQueensGridDiv(gridDiv);
   const gridCells = gridPkg[0];
   const clickTargets = gridPkg[1];
@@ -56,3 +56,4 @@ function clickQueens(clickTargets, queenLocations) {
 }
 
 window.queensPopupButtonOnClick = queensPopupButtonOnClick;
+
