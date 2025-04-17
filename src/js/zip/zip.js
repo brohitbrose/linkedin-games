@@ -11,12 +11,12 @@ export function zipPopupButtonOnClick() {
   // Determine desired clicks.
   const cellSequence = solveZip(gridArgs);
   // Execute desired clicks.
-  visitCells(clickTargets, compressedSequence);
+  visitCells(clickTargets, cellSequence);
 }
 
 // Returns the possibly iframe-embedded div corresponding to the Zip grid.
 function getZipGridDiv() {
-  return getGridDiv(d => document.querySelector(".grid-game-board"));
+  return getGridDiv(d => d.querySelector(".grid-game-board"));
 }
 
 // Transforms the div containing the Zip grid into a tuple:
