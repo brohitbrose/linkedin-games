@@ -1,8 +1,10 @@
 # linkedin-games
 
-A Firefox- and Chrome-compatible browser plugin to solve the daily LinkedIn Games puzzles.
-Currently supports Queens and Zip.
-Simply click the plugin icon (you may want to pin it) after starting a game, and hit the `Solve` button to cheat.
+A Firefox- and Chrome-compatible browser plugin to solve daily LinkedIn Games puzzles. Currently, only Queens and Zip are supported--stay tuned.
+
+## Usage (Post-Installation)
+
+Simply click the plugin's icon in your toolbar (you may want to pin the plugin for convenience) after starting a game, and hit the `Solve` button to cheat.
 
 ## Prerequisites
 

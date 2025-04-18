@@ -3,7 +3,7 @@ export function solveQueens(cells) {
 }
 
 /** Class representing the grid state of a Queens puzzle. */
-class QueensGrid {
+export class QueensGrid {
 
   static #square_roots = new Map([[16, 4], [25, 5], [36, 6], [49, 7], [64, 8],
     [81, 9], [100, 10], [121, 11], [144, 12],
@@ -29,6 +29,21 @@ class QueensGrid {
   #colorsToIndices;
 
   /**
+   * Maps each 2D index to its color.
+   */ 
+  #indicesToColors;
+
+  /**
+   * Tracks which indices have been visited.
+   */
+  #visitedIndices;
+
+  /**
+   * Tracks which colors have queens on them.
+   */
+  #visitedColors;
+
+  /**
    * Creates a Queens grid.
    * 
    * @constructor
@@ -44,6 +59,9 @@ class QueensGrid {
     this.#diagNeighbors = Array.from({ length: this.#n },
       () => new Array(this.#n).fill(0));
     this.#colorsToIndices = this.#constructColorsToIndices(array);
+    this.#indicesToColors = this.#constructIndicesToColors(array);
+    this.#visitedIndices = new Array(this.#n * this.#n).fill(false);
+    this.#visitedColors = new Array(this.#n).fill(false);
   }
 
   #constructColorsToIndices(array) {
@@ -67,6 +85,14 @@ class QueensGrid {
     //   place a queen (diagonal queen neighbors are the sole exception).
     // We opt for the grid state optimizations over the enhanced heuristic.
     return [...result.entries()].sort(([, a], [, b]) => a.length - b.length);
+  }
+
+  #constructIndicesToColors(array) {
+    const result = new Array(this.#n * this.#n);
+    for (const elem of array) {
+      result[elem.idx] = elem.color;
+    }
+    return result;
   }
 
   // Returns an Array of this.#n integers such that each element i indicates
@@ -94,7 +120,7 @@ class QueensGrid {
         this.#placeIgnoreColor(i, j);
         result.push(move);
         const shortCircuit = this.#backtrack(depth + 1, result);
-        this.#unplace(i, j);
+        this.#unplaceIgnoreColor(i, j);
         if (shortCircuit) {
           return true;
         } else {
@@ -105,11 +131,37 @@ class QueensGrid {
     return false;
   }
 
+  place(i, j) {
+    const flattened = this.#flatten(i, j);
+    const color = this.#indicesToColors[flattened];
+    if (!this.#visitedColors[color] && this.#canPlaceIgnoreColor(i, j)) {
+      this.#placeIgnoreColor(i, j);
+      this.#visitedColors[color] = true;
+      this.#visitedIndices[flattened] = true;
+      return true;
+    }
+    return false;
+  }
+
+  unplace(i, j) {
+    const flattened = this.#flatten(i, j);
+    if (this.#visitedIndices[flattened]) {
+      this.#visitedIndices[flattened] = false;
+      const color = this.#indicesToColors[flattened];
+      this.visitedColors[color] = false;
+      this.#unplaceIgnoreColor(i, j);
+      return true;
+    }
+    return false;
+  }
+
+  #flatten(i, j) {
+    return this.#n * i + j;
+  }
+
   /**
    * Returns whether a queen can be placed in a given spot without touching an
    * existing queen and without sharing a row/column with an existing queen.
-   * Does not check color, because backtrack() seeks one only valid entry per
-   * color in a given depth.
    */
   #canPlaceIgnoreColor(i, j) {
     return !(this.#rows[i] || this.#cols[j] || this.#diagNeighbors[i][j] > 0);
@@ -124,7 +176,7 @@ class QueensGrid {
     this.#markDownRight(i, j, true);
   }
 
-  #unplace(i, j) {
+  #unplaceIgnoreColor(i, j) {
     this.#rows[i] = false;
     this.#cols[j] = false;
     this.#markUpLeft(i, j, false);

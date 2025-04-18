@@ -56,4 +56,3 @@ function clickQueens(clickTargets, queenLocations) {
 }
 
 window.queensPopupButtonOnClick = queensPopupButtonOnClick;
-

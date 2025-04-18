@@ -1,20 +1,20 @@
 const esbuild = require('esbuild');
 
 const contentScripts = [
-  { entry: 'src/js/queens/queens.js', out: 'dist/queens.js' },
-  { entry: 'src/js/zip/zip.js', out: 'dist/zip.js' },
+  { entry: 'src/main/js/queens/queens.js', out: 'dist/queens.js' },
+  { entry: 'src/main/js/zip/zip.js', out: 'dist/zip.js' },
 ];
 
 const buildPopupJsArgs = {
     bundle: true,
-    entryPoints: ['src/js/popup.js'],
+    entryPoints: ['src/main/js/popup.js'],
     format: 'iife',
     outfile: 'dist/popup.js'
 };
 
 const buildPopupHtmlArgs = {
     bundle: true,
-    entryPoints: ['src/html/popup.html'],
+    entryPoints: ['src/assets/html/popup.html'],
     loader: { '.html': 'copy' },
     outfile: 'dist/popup.html'
 };

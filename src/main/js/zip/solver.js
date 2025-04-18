@@ -112,6 +112,8 @@ class ZipGrid {
     }
   }
 
+  // Recursive backtracking function that short-circuit-returns the first-found
+  // valid solution.
   // TODO: Implement this iteratively. In Queens, the number of stack frames is
   //  maximally the board dimension, which I've never seen exceed 11 in a real
   //  puzzle. In Zip, it's the number of cells, which I've seen go up to 64.

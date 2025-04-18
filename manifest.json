@@ -6,7 +6,7 @@
   "permissions": ["scripting", "activeTab"],
   "action": {
     "default_popup": "dist/popup.html",
-    "default_icon": "src/assets/icon.png"
+    "default_icon": "src/assets/img/icon.png"
   },
   "content_scripts": [
     {
@@ -19,6 +19,6 @@
     }
   ],
   "icons": {
-    "48": "src/assets/icon.png"
+    "48": "src/assets/img/icon.png"
   }
 }
