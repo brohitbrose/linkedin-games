@@ -1,7 +1,6 @@
 import { QueensGrid, solver } from 'queens/solver.js'
 
 const gridSeed = [
-
   // 1  2  3  4  5  6  7  8
   5, 5, 5, 5, 0, 0, 8, 8, 8, // 0
   5, 7, 5, 5, 0, 0, 6, 8, 8, // 1
@@ -19,16 +18,33 @@ const gridConstructorArgs = Array.from(gridSeed.entries())
        return {'idx': i, 'color': c}
      });
 
-test('Placing a queen forbids others in row/column/color/locale, ', () => {
+test('Placing a queen forbids others in row/column/color/locale', () => {
   const grid = new QueensGrid(gridConstructorArgs);
   // Move 0: no issues.
   expect(grid.place(4, 2)).toBe(true);
-  // Same row conflict to the left.
+  // Same row conflicts to the left and right.
   expect(grid.place(4, 0)).toBe(false);
-  // Same row conflict to the right.
   expect(grid.place(4, 8)).toBe(false);
-  // Same column conflict up.
+  // Same column conflicts up and down.
   expect(grid.place(2, 2)).toBe(false);
-  // Same column conflict down.
   expect(grid.place(8, 2)).toBe(false);
+  // Diagonal neighbor conflicts.
+  expect(grid.place(3, 1)).toBe(false);
+  expect(grid.place(3, 3)).toBe(false);
+  expect(grid.place(5, 1)).toBe(false);
+  expect(grid.place(5, 3)).toBe(false);
+  // Move 1: diagonal non-neighbor, different color does not conflict.
+  expect(grid.place(6, 0)).toBe(true);
+  // Diagonal non-neighbor, same color does conflict.
+  expect(grid.place(8, 2)).toBe(false);
+});
+
+test('QueensGrid.solve() generates the correct solution', () => {
+  const grid = new QueensGrid(gridConstructorArgs);
+  const solution = grid.solve();
+  expect(solution.length).toBe(9);
+  let found = true;
+  [5, 10, 24, 31, 38, 52, 66, 80, 54]
+    .forEach(e => { found = (found && solution.includes(e)); });
+  expect(found).toBe(true);
 });
