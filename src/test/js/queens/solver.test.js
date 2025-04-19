@@ -13,10 +13,7 @@ const gridSeed = [
   5, 5, 5, 5, 2, 8, 8, 8, 8  // 8
 ];
 
-const gridConstructorArgs = Array.from(gridSeed.entries())
-    .map(([i, c]) => {
-       return {'idx': i, 'color': c}
-     });
+const gridConstructorArgs = gridSeed.map((c, i) => ({'idx': i, 'color': c}));
 
 test('Placing a queen forbids others in row/column/color/locale', () => {
   const grid = new QueensGrid(gridConstructorArgs);
