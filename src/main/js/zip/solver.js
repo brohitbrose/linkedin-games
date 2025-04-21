@@ -43,12 +43,19 @@ class ZipGrid {
   #foot;
   /** The current marked number that we have reached. */
   #current;
+  /** The explored path so far. */
+  #path;
+  /** The number of moves made so far. */
+  #visitedCells;
+  /** Bookkeeping stack of degree changes. */
+  #degreeModifications;
 
   /**
    * Stores the following for each cell:
    * 0. Whether it is visited
    * 1. The circled number that it includes if present, otherwise -1
-   * 2. The number of unvisited neighbors that are not wall-blocked
+   * 2. If this cell is visited, then the number of unvisited neighbors that are
+   *    not wall-blocked; otherwise, undefined behavior
    * 3. Whether its right neighbor is blocked by a wall
    * 4. Whether its down neighbor is blocked by a wall.
    */
@@ -61,6 +68,12 @@ class ZipGrid {
     this.#head = numberedCells[0];
     this.#foot = numberedCells[numberedCells.length - 1];
     this.#current = 1;
+
+    this.#path = new Array(this.#size).fill(-1);
+    this.#path[0] = this.#head;
+    this.#visitedCells = 1;
+    this.#degreeModifications = Array.from({length: this.#size - 1},
+      () => []);
 
     this.#cellStatuses = this.#constructCellStatuses(m, n, this.#size,
         numberedCells, downWalls, rightWalls);
@@ -103,9 +116,8 @@ class ZipGrid {
    * visited to solve the puzzle.
    */
   solve() {
-    const result = [this.#head];
-    const degreeModifications = []; // stack
-    if (this.#backtrack(1, result, degreeModifications)) {
+    let result;
+    if (result = this.#backtrack()) {
       return result;
     } else {
       throw new Error("No solutions found");
@@ -117,50 +129,44 @@ class ZipGrid {
   // TODO: Implement this iteratively. In Queens, the number of stack frames is
   //  maximally the board dimension, which I've never seen exceed 11 in a real
   //  puzzle. In Zip, it's the number of cells, which I've seen go up to 64.
-  #backtrack(depth, result, degreeModifications) {
-    if (depth === this.#size) {
-      return true;
+  #backtrack() {
+    if (this.#visitedCells === this.#size) {
+      return [...this.#path];
     }
-    const lastMove = result[result.length - 1];
-    let shortCircuit = false;
-    if (this.#tryDirection(this.#canVisitUp(lastMove), lastMove - this.#n,
-        depth, result, degreeModifications, this.#visitUp)) {
-      return true;
+    const move = this.lastMove();
+    let result;
+    if (result = this.#tryDirection(this.canVisitUp(), move - this.#n, move,
+        this.#visitUp)) {
+      return result;
     }
-    if (this.#tryDirection(this.#canVisitDown(lastMove), lastMove + this.#n,
-        depth, result, degreeModifications, this.#visitDown)) {
-      return true;
+    if (result = this.#tryDirection(this.canVisitDown(), move + this.#n,
+        move, this.#visitDown)) {
+      return result;
     }
-    if (this.#tryDirection(this.#canVisitLeft(lastMove), lastMove - 1,
-        depth, result, degreeModifications, this.#visitLeft)) {
-      return true;
+    if (result = this.#tryDirection(this.canVisitLeft(), move - 1, move,
+        this.#visitLeft)) {
+      return result;
     }
-    if (this.#tryDirection(this.#canVisitRight(lastMove), lastMove + 1,
-        depth, result, degreeModifications, this.#visitRight)) {
-      return true;
+    if (result = this.#tryDirection(this.canVisitRight(), move + 1, move,
+        this.#visitRight)) {
+      return result;
     }
     return false;
   }
 
-  #tryDirection(canVisit, move, depth, path, degreeModifications, doVisit) {
+  #tryDirection(canVisit, move, lastMove, doVisit) {
     if (!canVisit) {
       return false;
     }
-    doVisit.call(this, move, path[path.length - 1], degreeModifications);
-    path.push(move);
-    const success = this.#backtrack(depth + 1, path, degreeModifications);
-    this.#unvisit(move, degreeModifications);
-    if (success) {
-      return true;
-    } else {
-      path.pop();
-      return false;
-    }
+    doVisit.call(this, move, lastMove);
+    const solution = this.#backtrack();
+    this.unvisit();
+    return solution;
   }
 
   /**
-   * Returns whether it is possible to visit the cell that is directly above the
-   * provided one. This method checks whether:
+   * Returns whether it is possible to extend the current path to move up. This
+   * method checks whether (let "src" be the last visited cell in #path):
    * - The "above cell" (hereafter "dst") exists in this grid
    * - dst has already been visited
    * - There is a wall between src and dst
@@ -169,47 +175,44 @@ class ZipGrid {
    *   only 1 unvisited cell attached to them, and similarly for the terminal
    *   cell except the check condition is 0 not 1.
    */
-  #canVisitUp(src) {
-    return this.#canVisitDirection(src,
-        s => s - this.#n,
+  canVisitUp() {
+    return this.#canVisitDirection(s => s - this.#n,
         (d, s) => d >= 0,
         (ds, ss) => ds.hasDownWall(),
         [this.#visitIsolatesDown, this.#visitIsolatesLeft,
             this.#visitIsolatesRight]);
   }
 
-  /** Same as #canVisitUp, but for the cell below the provided one. */
-  #canVisitDown(src) {
-    return this.#canVisitDirection(src,
-        s => s + this.#n,
+  /** Same as #canVisitUp, but for moving down. */
+  canVisitDown() {
+    return this.#canVisitDirection(s => s + this.#n,
         (d, s) => d < this.#size,
         (ds, ss) => ss.hasDownWall(),
         [this.#visitIsolatesUp, this.#visitIsolatesLeft,
             this.#visitIsolatesRight]);
   }
 
-  /** Same as #canVisitUp, but for the cell left of the provided one. */
-  #canVisitLeft(src) {
-    return this.#canVisitDirection(src,
-        s => s - 1,
+  /** Same as #canVisitUp, but for moving left. */
+  canVisitLeft() {
+    return this.#canVisitDirection(s => s - 1,
         (d, s) => s % this.#n !== 0,
         (ds, ss) => ds.hasRightWall(),
         [this.#visitIsolatesUp, this.#visitIsolatesDown,
             this.#visitIsolatesRight]);
   }
 
-  /** Same as #canVisitUp, but for the cell right of the provided one. */
-  #canVisitRight(src) {
-    return this.#canVisitDirection(src,
-        s => s + 1,
+  /** Same as #canVisitUp, but for moving right. */
+  canVisitRight() {
+    return this.#canVisitDirection(s => s + 1,
         (d, s) => s % this.#n !== this.#n - 1,
         (ds, ss) => ss.hasRightWall(),
         [this.#visitIsolatesUp, this.#visitIsolatesDown,
             this.#visitIsolatesLeft]);
   }
 
-  #canVisitDirection(src, computeDst, checkDstSrcBounds, checkDstSrcWall,
+  #canVisitDirection(computeDst, checkDstSrcBounds, checkDstSrcWall,
       willIsolateFns) {
+    const src = this.lastMove();
     const dst = computeDst.call(this, src);
     const dstStatus = this.#cellStatuses[dst];
     const srcStatus = this.#cellStatuses[src];
@@ -254,31 +257,27 @@ class ZipGrid {
         || (cell !== this.#foot && degree === 2);
   }
 
-  #visitUp(dst, src, degreeModifications) {
-    this.#visitDirection(dst, src, degreeModifications,
-        [this.#visitImpactsDownDegree, this.#visitImpactsLeftDegree,
-            this.#visitImpactsRightDegree]);
+  #visitUp(dst, src) {
+    this.#visitDirection(dst, src, [this.#visitImpactsDownDegree,
+        this.#visitImpactsLeftDegree, this.#visitImpactsRightDegree]);
   }
 
-  #visitDown(dst, src, degreeModifications) {
-    this.#visitDirection(dst, src, degreeModifications,
-        [this.#visitImpactsUpDegree, this.#visitImpactsLeftDegree,
-            this.#visitImpactsRightDegree]);
+  #visitDown(dst, src) {
+    this.#visitDirection(dst, src, [this.#visitImpactsUpDegree,
+        this.#visitImpactsLeftDegree, this.#visitImpactsRightDegree]);
   }
 
-  #visitLeft(dst, src, degreeModifications) {
-    this.#visitDirection(dst, src, degreeModifications,
-        [this.#visitImpactsUpDegree, this.#visitImpactsDownDegree,
-            this.#visitImpactsRightDegree]);
+  #visitLeft(dst, src) {
+    this.#visitDirection(dst, src, [this.#visitImpactsUpDegree,
+        this.#visitImpactsDownDegree, this.#visitImpactsRightDegree]);
   }
 
-  #visitRight(dst, src, degreeModifications) {
-    this.#visitDirection(dst, src, degreeModifications,
-        [this.#visitImpactsUpDegree, this.#visitImpactsDownDegree,
-          this.#visitImpactsLeftDegree]);
+  #visitRight(dst, src) {
+    this.#visitDirection(dst, src,[this.#visitImpactsUpDegree,
+        this.#visitImpactsDownDegree, this.#visitImpactsLeftDegree]);
   }
 
-  #visitDirection(dst, src, degreeModifications, impactFns) {
+  #visitDirection(dst, src, impactFns) {
     const dstStatus = this.#cellStatuses[dst];
     // Mark cell as visited.
     dstStatus.setVisited(true);
@@ -287,8 +286,8 @@ class ZipGrid {
     if (dstContent > 0) {
       this.#current = dstContent; 
     }
-    // Check if degrees need to be modified.
-    const newModifications = [];
+    // Modify degrees as needed.
+    const newModifications = this.#degreeModifications[this.#visitedCells - 1];
     for (const impactFn of impactFns) {
       const cell = impactFn.call(this, src);
       if (cell >= 0) {
@@ -296,7 +295,8 @@ class ZipGrid {
         newModifications.push(cell);
       }
     }
-    degreeModifications.push(newModifications);
+    // Update path, visitedCells
+    this.#path[this.#visitedCells++] = dst;
   }
 
   #visitImpactsUpDegree(src) {
@@ -338,20 +338,27 @@ class ZipGrid {
     return -1;
   }
 
-  #unvisit(move, degreeModifications) {
+  unvisit() {
+    const lastMove = this.lastMove();
+    // Remove last move from path and update visitedCells value.
+    this.#path[(this.#visitedCells--) - 1] = -1;
     // Possibly revert degree modifications.
-    const modifications = degreeModifications.pop();
-    for (const cell of modifications) {
-      this.#cellStatuses[cell].incrementDegree();
+    const modifications = this.#degreeModifications[this.#visitedCells - 1];
+    while (modifications.length !== 0) {
+      this.#cellStatuses[modifications.pop()].incrementDegree();
     }
     // Possibly revert last-found circled number, 
-    const moveStatus = this.#cellStatuses[move];
+    const moveStatus = this.#cellStatuses[lastMove];
     const moveContent = moveStatus.getContent();
     if (moveContent > 0) {
       this.#current = moveContent - 1;
     }
     // Mark cell as unvisited.
     moveStatus.setVisited(false);
+  }
+
+  lastMove() {
+    return this.#path[this.#visitedCells - 1];
   }
 
 }
