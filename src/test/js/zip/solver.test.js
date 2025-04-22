@@ -78,34 +78,3 @@ test('ZipGrid.solve() generates the correct solution', () => {
     expect(actual[i]).toBe(expected[i]);
   }
 });
-
-// test('Placing a queen forbids others in row/column/color/locale', () => {
-//   const grid = new QueensGrid(gridConstructorArgs);
-//   // Move 0: no issues.
-//   expect(grid.place(4, 2)).toBe(true);
-//   // Same row conflicts to the left and right.
-//   expect(grid.place(4, 0)).toBe(false);
-//   expect(grid.place(4, 8)).toBe(false);
-//   // Same column conflicts up and down.
-//   expect(grid.place(2, 2)).toBe(false);
-//   expect(grid.place(8, 2)).toBe(false);
-//   // Diagonal neighbor conflicts.
-//   expect(grid.place(3, 1)).toBe(false);
-//   expect(grid.place(3, 3)).toBe(false);
-//   expect(grid.place(5, 1)).toBe(false);
-//   expect(grid.place(5, 3)).toBe(false);
-//   // Move 1: diagonal non-neighbor, different color does not conflict.
-//   expect(grid.place(6, 0)).toBe(true);
-//   // Diagonal non-neighbor, same color does conflict.
-//   expect(grid.place(8, 2)).toBe(false);
-// });
-
-// test('QueensGrid.solve() generates the correct solution', () => {
-//   const grid = new QueensGrid(gridConstructorArgs);
-//   const solution = grid.solve();
-//   expect(solution.length).toBe(9);
-//   let found = true;
-//   [5, 10, 24, 31, 38, 52, 66, 80, 54]
-//     .forEach(e => { found = (found && solution.includes(e)); });
-//   expect(found).toBe(true);
-// });
