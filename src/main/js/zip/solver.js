@@ -29,7 +29,7 @@ function compressSequence(sequence) {
 }
 
 /** Class representing the grid state of a fresh Zip puzzle. */
-class ZipGrid {
+export class ZipGrid {
 
   /** The number of rows in this grid. */
   #m;
@@ -97,12 +97,18 @@ class ZipGrid {
       const cellStatus = result[walledCell];
       cellStatus.addDownWall();
       cellStatus.decrementDegree();
+      if (walledCell < size - n) {
+        result[walledCell + n].decrementDegree();
+      }
     }
     // Right walls
     for (const walledCell of rightWalls) {
       const cellStatus = result[walledCell];
       cellStatus.addRightWall();
       cellStatus.decrementDegree();
+      if (walledCell % n !== n - 1) {
+        result[walledCell + 1].decrementDegree();
+      }
     }
     // Numbered cells
     for (let i = 0; i < numberedCells.length; i++) {
@@ -128,7 +134,8 @@ class ZipGrid {
   // valid solution.
   // TODO: Implement this iteratively. In Queens, the number of stack frames is
   //  maximally the board dimension, which I've never seen exceed 11 in a real
-  //  puzzle. In Zip, it's the number of cells, which I've seen go up to 64.
+  //  puzzle. In Zip, it's the number of cells, which I've seen go up to 64, and
+  //  the use of the helper function compounds this number.
   #backtrack() {
     if (this.#visitedCells === this.#size) {
       return [...this.#path];
@@ -136,19 +143,19 @@ class ZipGrid {
     const move = this.lastMove();
     let result;
     if (result = this.#tryDirection(this.canVisitUp(), move - this.#n, move,
-        this.#visitUp)) {
+        this.#doVisitUp)) {
       return result;
     }
     if (result = this.#tryDirection(this.canVisitDown(), move + this.#n,
-        move, this.#visitDown)) {
+        move, this.#doVisitDown)) {
       return result;
     }
     if (result = this.#tryDirection(this.canVisitLeft(), move - 1, move,
-        this.#visitLeft)) {
+        this.#doVisitLeft)) {
       return result;
     }
     if (result = this.#tryDirection(this.canVisitRight(), move + 1, move,
-        this.#visitRight)) {
+        this.#doVisitRight)) {
       return result;
     }
     return false;
@@ -257,22 +264,58 @@ class ZipGrid {
         || (cell !== this.#foot && degree === 2);
   }
 
-  #visitUp(dst, src) {
+  visitUp() {
+    if (this.canVisitUp()) {
+      const lastMove = this.lastMove();
+      this.#doVisitUp(lastMove - this.#n, lastMove);
+      return true;
+    }
+    return false;
+  }
+
+  #doVisitUp(dst, src) {
     this.#visitDirection(dst, src, [this.#visitImpactsDownDegree,
         this.#visitImpactsLeftDegree, this.#visitImpactsRightDegree]);
   }
 
-  #visitDown(dst, src) {
+  visitDown() {
+    if (this.canVisitDown()) {
+      const lastMove = this.lastMove();
+      this.#doVisitDown(lastMove + this.#n, lastMove);
+      return true;
+    }
+    return false;
+  }
+
+  #doVisitDown(dst, src) {
     this.#visitDirection(dst, src, [this.#visitImpactsUpDegree,
         this.#visitImpactsLeftDegree, this.#visitImpactsRightDegree]);
   }
 
-  #visitLeft(dst, src) {
+  visitLeft() {
+    if (this.canVisitLeft()) {
+      const lastMove = this.lastMove();
+      this.#doVisitLeft(lastMove - 1, lastMove);
+      return true;
+    }
+    return false;
+  }
+
+  #doVisitLeft(dst, src) {
     this.#visitDirection(dst, src, [this.#visitImpactsUpDegree,
         this.#visitImpactsDownDegree, this.#visitImpactsRightDegree]);
   }
 
-  #visitRight(dst, src) {
+  visitRight() {
+    if (this.canVisitRight()) {
+      const lastMove = this.lastMove();
+      this.#doVisitRight(lastMove + 1, lastMove);
+      return true;
+    }
+    return false;
+  }
+
+  #doVisitRight(dst, src) {
     this.#visitDirection(dst, src,[this.#visitImpactsUpDegree,
         this.#visitImpactsDownDegree, this.#visitImpactsLeftDegree]);
   }
@@ -300,19 +343,26 @@ class ZipGrid {
   }
 
   #visitImpactsUpDegree(src) {
-    const up = src - this.#n;
-    const upStatus = this.#cellStatuses[up];
-    return up >= 0 && !upStatus.isVisited() && !upStatus.hasDownWall()
-        ? up : -1;
+    if (src >= this.#n) {
+      const up = src - this.#n;
+      const upStatus = this.#cellStatuses[up];
+      if (!upStatus.isVisited() && !upStatus.hasDownWall()) {
+        return up;
+      }
+    }
+    return -1;
   }
 
   #visitImpactsDownDegree(src) {
-    const down = src + this.#n;
-    const downStatus = this.#cellStatuses[down];
-    const srcStatus = this.#cellStatuses[src];
-    return down < this.#size
-          && !downStatus.isVisited() && !srcStatus.hasDownWall()
-        ? down : -1;
+    if (src < this.#size - this.#n) {
+      const down = src + this.#n;
+      const downStatus = this.#cellStatuses[down];
+      const srcStatus = this.#cellStatuses[src];
+      if (!downStatus.isVisited() && !srcStatus.hasDownWall()) {
+        return down;
+      }
+    }
+    return -1;
   }
 
   #visitImpactsLeftDegree(src) {
