@@ -389,6 +389,9 @@ export class ZipGrid {
   }
 
   unvisit() {
+    if (this.#visitedCells == 1) {
+      return false;
+    }
     const lastMove = this.lastMove();
     // Remove last move from path and update visitedCells value.
     this.#path[(this.#visitedCells--) - 1] = -1;
@@ -405,6 +408,7 @@ export class ZipGrid {
     }
     // Mark cell as unvisited.
     moveStatus.setVisited(false);
+    return true;
   }
 
   lastMove() {
