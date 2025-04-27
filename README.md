@@ -35,7 +35,7 @@ Potential gotchas:
 
 - `npm test`
 
-## Browser Installation Instructions
+## From-Source Browser Installation Instructions
 
 ### Firefox
 
