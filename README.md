@@ -17,7 +17,7 @@ Simply click the plugin's icon in your toolbar (you may want to pin the plugin f
 - `node`
 - `npm`
 
-Note that Manifest V3 APIs are used throughout this project.
+Note that Manifest V3 APIs are used throughout this project's source code.
 
 ## Build Instructions
 
