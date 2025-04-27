@@ -1,5 +1,7 @@
 # linkedin-games
 
+https://github.com/user-attachments/assets/8c7d7c48-01db-40f8-aa06-ec2156c84417
+
 A Firefox- and Chrome-compatible browser plugin to solve daily LinkedIn Games puzzles. Currently supports (note: the links below open https://www.linkedin.com):
 
 - [Queens](https://www.linkedin.com/games/queens/)
