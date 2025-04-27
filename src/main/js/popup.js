@@ -7,6 +7,7 @@ polyfilledBrowser.tabs.query({ active: true, currentWindow: true })
       const url = tab.url || "";
       const isQueens = url.includes("linkedin.com/games/queens");
       const isZip = url.includes("linkedin.com/games/zip");
+      const isTango = url.includes("linkedin.com/games/tango");
 
       if (isQueens) {
         enableButtonExecuteScript(button, 'Solve Queens', tab, () => {
@@ -15,6 +16,10 @@ polyfilledBrowser.tabs.query({ active: true, currentWindow: true })
       } else if (isZip) {
         enableButtonExecuteScript(button, 'Solve Zip', tab, () => {
           zipPopupButtonOnClick();
+        });
+      } else if (isTango) {
+        enableButtonExecuteScript(button, 'Solve Tango', tab, () => {
+          tangoPopupButtonOnClick();
         });
       } else {
         disableButton(button);
@@ -43,5 +48,5 @@ function disableButton(button) {
   button.disabled = true;
   button.style.opacity = "0.5";
   button.style.cursor = "not-allowed";
-  button.title = "Must be on linkedin.com/games/{queens|zip}";
+  button.title = "Must be on linkedin.com/games/{queens|zip|tango}";
 }

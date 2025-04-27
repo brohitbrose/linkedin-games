@@ -5,7 +5,7 @@ export function solveQueens(cells) {
 /** Class representing the grid state of a Queens puzzle. */
 export class QueensGrid {
 
-  static #square_roots = new Map([[16, 4], [25, 5], [36, 6], [49, 7], [64, 8],
+  static #SQUARE_ROOTS = new Map([[16, 4], [25, 5], [36, 6], [49, 7], [64, 8],
     [81, 9], [100, 10], [121, 11], [144, 12],
     [169, 13], [196, 14], [225, 15], [256, 16]]);
 
@@ -50,7 +50,7 @@ export class QueensGrid {
    * @param {Array} array - An array of exactly 
    */
   constructor(array) {
-    this.#n = QueensGrid.#square_roots.get(array.length);
+    this.#n = QueensGrid.#SQUARE_ROOTS.get(array.length);
     if (!this.#n) {
       throw new Error("Invalid input array length " + array.length);
     }
