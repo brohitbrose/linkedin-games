@@ -59,7 +59,7 @@ function transformTangoGridDiv(gridDiv) {
       } else if ('Moon' === title) {
         initialBlues.push(id);
       } else {
-        console.log('??? ' + title); // FIXME
+        console.error('Themed puzzles not yet supported; found title=' + title);
       }
     }
   }
@@ -80,8 +80,6 @@ function transformTangoGridDiv(gridDiv) {
           equalSigns.push(id);
         } else if ('Cross' === label) {
           crosses.push(id);
-        } else {
-          console.log('???? ' + label); // FIXME
         }
         return true;
       }

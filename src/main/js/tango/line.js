@@ -578,17 +578,4 @@ export class TangoLine {
     }
   }
 
-  // debug() {
-  //   const result = {
-  //     id: this.#id,
-  //     cellColors: this.#cellColors,
-  //     equalSigns: this.#equalSigns,
-  //     crosses: this.#crosses,
-  //     yellowCount: this.#yellowCount,
-  //     blueCount: this.#blueCount,
-  //     crossEntanglements: this.#crossEntanglements
-  //   };
-  //   console.log(JSON.stringify(result));
-  // }
-
 }
