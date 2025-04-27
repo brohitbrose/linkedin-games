@@ -10,13 +10,15 @@ export function tangoPopupButtonOnClick() {
   const clickTargets = gridPkg[1];
   console.log(JSON.stringify(gridArgs));
   // Determine desired clicks.
-  [sunCells, moonCells] = solveTango(gridArgs);
+  const markSequence = solveTango(gridArgs);
   // Execute desired clicks.
-  for (const idx of sunCells) {
-    markSun(clickTargets[cellDiv]);
-  }
-  for (const idx of moonCells) {
-    markMoon(clickTargets[cellDiv]);
+  for (const mark of markSequence) {
+    const divToMark = clickTargets[mark.idx];
+    if (mark.color === 1) {
+      markSun(divToMark);
+    } else if (mark.color === 2) {
+      markMoon(divToMark);
+    }
   }
 }
 
@@ -81,9 +83,7 @@ function transformTangoGridDiv(gridDiv) {
         } else if ('Cross' === label) {
           crosses.push(id);
         }
-        return true;
       }
-      return false;
     }
 
   }

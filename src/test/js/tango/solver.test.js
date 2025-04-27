@@ -150,10 +150,10 @@ test('TangoGrid.solve() generates the correct solution', () => {
     [1, 10, 12, 24] // right crosses
   ];
   let grid = new TangoGrid(...gridArgs);
-  let result = grid.solve();
-  expect(result[0].sort((a, b) => a - b))
+  let [yellows, blues] = yellowsAndBlues(grid.solve());
+  expect(yellows.sort((a, b) => a - b))
       .toEqual([1, 3, 4, 6, 10, 13, 14, 17, 18, 20, 21, 25, 28, 29, 30, 32]);
-  expect(result[1].sort((a, b) => a - b))
+  expect(blues.sort((a, b) => a - b))
       .toEqual([2, 5, 7, 8, 11, 12, 15, 16, 19, 22, 23, 24, 27, 31, 33, 34]);
 
   // 2025/04/46 puzzle
@@ -166,9 +166,15 @@ test('TangoGrid.solve() generates the correct solution', () => {
     [] // right crosses
   ];
   grid = new TangoGrid(...gridArgs);
-  result = grid.solve();
-  expect(result[0].sort((a, b) => a - b))
+  [yellows, blues] = yellowsAndBlues(grid.solve());
+  expect(yellows.sort((a, b) => a - b))
       .toEqual([6, 9, 11, 12, 14, 19, 22, 23, 24, 25, 27, 35]);
-  expect(result[1].sort((a, b) => a - b))
+  expect(blues.sort((a, b) => a - b))
       .toEqual([0, 5, 7, 8, 10, 13, 16, 17, 18, 20, 21, 26, 28, 29, 30]);
+
+  function yellowsAndBlues(markSequence) {
+    const yellows = markSequence.filter(m => m.color === 1).map(m => m.idx);
+    const blues = markSequence.filter(m => m.color === 2).map(m => m.idx);
+    return [yellows, blues];
+  }
 });

@@ -71,31 +71,28 @@ export class TangoGrid {
   }
 
   solve() {
-    let newYellows = [];
-    let newBlues = [];
+    const markSequence = [];
     while (!this.#taskQueue.isEmpty()) {
       const poll = this.#taskQueue.poll();
       const line = this.#lines[poll];
       const changeList = line.consolidate();
       for (const delta of changeList) {
-        this.#onDelta(line, delta, changeList, newYellows, newBlues);
+        this.#onDelta(line, delta, changeList, markSequence);
       }
     }
-    return [newYellows, newBlues];
+    return markSequence;
   }
 
-  #onDelta(line, delta, changeList, newYellows, newBlues) {
+  #onDelta(line, delta, changeList, markSequence) {
     const isRow = line.getId() < 6;
     // Unpack idx, color from delta, and choose appropriate output list.
-    let idx, color, dst;
+    let idx, color;
     if (delta >= 0) {
       idx = delta;
       color = 1;
-      dst = newYellows;
     } else {
       idx = -(delta + 1);
       color = 2;
-      dst = newBlues;
     }
     // Update the perpendicular TangoLine.
     const crossLineId = isRow ? 6 + idx : idx;
@@ -113,7 +110,7 @@ export class TangoGrid {
     // Update the task queue.
     this.#taskQueue.offer(offer);
     // Perform the push to the solve() output.
-    dst.push(resultIdx);
+    markSequence.push({'color': color, 'idx': resultIdx});
   }
 
 }
