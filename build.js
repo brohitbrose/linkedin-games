@@ -3,6 +3,7 @@ const esbuild = require('esbuild');
 const contentScripts = [
   { entry: 'src/main/js/queens/queens.js', out: 'dist/queens.js' },
   { entry: 'src/main/js/zip/zip.js', out: 'dist/zip.js' },
+  { entry: 'src/main/js/tango/tango.js', out: 'dist/tango.js' },
 ];
 
 const buildPopupJsArgs = {

@@ -1,6 +1,5 @@
 export function solveZip(gridArgs) {
-  const zipGrid = new ZipGrid(gridArgs[0], gridArgs[1], gridArgs[2],
-      gridArgs[3], gridArgs[4]);
+  const zipGrid = new ZipGrid(...gridArgs);
   const sequence = zipGrid.solve();
   return compressSequence(sequence);
 }
@@ -47,15 +46,16 @@ export class ZipGrid {
   #path;
   /** The number of moves made so far. */
   #visitedCells;
-  /** Bookkeeping stack of degree changes. */
+  /** Bookkeeping stack of degree changes, used by a pruning strategy. */
   #degreeModifications;
 
   /**
    * Stores the following for each cell:
    * 0. Whether it is visited
    * 1. The circled number that it includes if present, otherwise -1
-   * 2. If this cell is visited, then the number of unvisited neighbors that are
-   *    not wall-blocked; otherwise, undefined behavior
+   * 2. (Used by a pruning strategy) If this cell is unvisited, then the number
+   *    of unvisited neighbors that are not wall-blocked; otherwise, undefined
+   *    behavior
    * 3. Whether its right neighbor is blocked by a wall
    * 4. Whether its down neighbor is blocked by a wall.
    */
@@ -172,8 +172,10 @@ export class ZipGrid {
   }
 
   /**
-   * Returns whether it is possible to extend the current path to move up. This
-   * method checks whether (let "src" be the last visited cell in #path):
+   * Returns whether it is possible to extend the current path to move up once.
+   *
+   * This method checks whether (let "src" be the last visited cell in #path):
+   *
    * - The "above cell" (hereafter "dst") exists in this grid
    * - dst has already been visited
    * - There is a wall between src and dst
@@ -181,6 +183,25 @@ export class ZipGrid {
    * - Visiting dst would "cut off" any unvisited non-terminal cells by leaving
    *   only 1 unvisited cell attached to them, and similarly for the terminal
    *   cell except the check condition is 0 not 1.
+   *
+   * The last of these is only relevant for pruning purposes. The backtracking
+   * algorithm works completely fine without it, and official puzzles are small
+   * enough that there is no noticeable performance benefit to its inclusion. We
+   * keep around for academic purposes, and it's simple enough (albeit verbose).
+   *
+   * For extremely large puzzles, however, the pruning strategy is invaluable--
+   * and likely to even be insufficient. Consider an in-progress path that began
+   * by going up 5 cells, then right 5 cells, then down 3, then left until it
+   * reencountered the upward leg. Assuming that this all happens far away from
+   * any grid boundaries, none of these cells will have degree 0/1 whether we go
+   * up or down, but going up or down at this point makes the other direction's
+   * cells unreachable.
+   *
+   * Recognizing such isues requires global awareness whereas our simple degree
+   * strategy counting is inherently local. Maintaining global state effectively
+   * is complicated to reason about and implement; the bookkeeping required for
+   * achieving this could well even have *negative* impact for small puzzles. It
+   * has been left out for now, but we are open to reconsidering.
    */
   canVisitUp() {
     return this.#canVisitDirection(s => s - this.#n,
@@ -417,6 +438,7 @@ export class ZipGrid {
 
 }
 
+/** Record-type class for the status of a single Zip cell. */
 class ZipGridCellStatus {
 
   #isVisited;

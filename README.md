@@ -1,6 +1,14 @@
 # linkedin-games
 
-A Firefox- and Chrome-compatible browser plugin to solve daily LinkedIn Games puzzles. Currently, only Queens and Zip are supported--stay tuned.
+https://github.com/user-attachments/assets/8c7d7c48-01db-40f8-aa06-ec2156c84417
+
+A Firefox- and Chrome-compatible browser plugin to solve daily LinkedIn Games puzzles. Currently supports (note: the links below open https://www.linkedin.com):
+
+- [Queens](https://www.linkedin.com/games/queens/)
+- [Zip](https://www.linkedin.com/games/zip/)
+- [Tango](https://www.linkedin.com/games/tango/)
+
+Stay tuned for more!
 
 ## Usage (Post-Installation)
 
@@ -11,7 +19,7 @@ Simply click the plugin's icon in your toolbar (you may want to pin the plugin f
 - `node`
 - `npm`
 
-Note that Manifest V3 APIs are used throughout this project.
+Note that Manifest V3 APIs are used throughout this project's source code.
 
 ## Build Instructions
 
@@ -27,7 +35,7 @@ Potential gotchas:
 
 - `npm test`
 
-## Browser Installation Instructions
+## From-Source Browser Installation Instructions
 
 ### Firefox
 
