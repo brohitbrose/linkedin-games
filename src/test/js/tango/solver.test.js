@@ -141,7 +141,7 @@ test('Line with no non-cross cells autofills', () => {
 
 test('TangoGrid.solve() generates the correct solution', () => {
   // 2025/04/20 puzzle
-  const gridArgs = [
+  let gridArgs = [
     [9, 35], // initial suns
     [0, 26], // initial moons
     [2], // down equal signs
@@ -149,8 +149,15 @@ test('TangoGrid.solve() generates the correct solution', () => {
     [13, 33], // right equal signs
     [1, 10, 12, 24] // right crosses
   ];
-  const grid = new TangoGrid(...gridArgs);
-  const result = grid.solve();
-  console.log(result[0]);
-  console.log(result[1]);
+  let grid = new TangoGrid(...gridArgs);
+  let result = grid.solve();
+  console.log(result[0].sort((a, b) => a - b));
+  console.log(result[1].sort((a, b) => a - b));
+
+  // 2025/04/46 puzzle
+  gridArgs = [[1,2,4,15,32,34],[3,31,33],[6],[11,14,18,23],[20],[]];
+  grid = new TangoGrid(...gridArgs);
+  result = grid.solve();
+  console.log(result[0].sort((a, b) => a - b));
+  console.log(result[1].sort((a, b) => a - b));
 });

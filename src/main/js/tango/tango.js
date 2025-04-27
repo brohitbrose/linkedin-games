@@ -8,6 +8,7 @@ export function tangoPopupButtonOnClick() {
   const gridPkg = transformTangoGridDiv(gridDiv);
   const gridArgs = gridPkg[0];
   const clickTargets = gridPkg[1];
+  console.log(JSON.stringify(gridArgs));
   // Determine desired clicks.
   [sunCells, moonCells] = solveTango(gridArgs);
   // Execute desired clicks.

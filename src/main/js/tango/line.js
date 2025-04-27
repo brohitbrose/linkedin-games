@@ -27,7 +27,7 @@ export class TangoLine {
     assertInRange(crosses, 0, TangoLine.#DIMENSION - 2, "crosses");
 
     // 3+ equals never valid; 2+ valid only if one in beginning, one at end.        
-    this.#equalSigns = [...new Set(equalSigns)].sort();
+    this.#equalSigns = [...new Set(equalSigns)].sort((a, b) => a - b);
     if (this.#equalSigns.length > 2) {
       throw new Error("Too many equal signs: " + this.#equalSigns
           + "( id=" + id + ")");
@@ -41,7 +41,7 @@ export class TangoLine {
       }
     }
 
-    this.#crosses = [...new Set(crosses)].sort();
+    this.#crosses = [...new Set(crosses)].sort((a, b) => a - b);
     this.#yellowCount = 0;
     this.#blueCount = 0;
 

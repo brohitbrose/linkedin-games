@@ -21,8 +21,8 @@ function toConsolidateTo(line, expected) {
       pass: false
     };
   }
-  actual.sort();
-  expected.sort();
+  actual.sort((a, b) => a - b);
+  expected.sort((a, b) => a - b);
   for (let i = 0; i < actual.length; i++) {
     if (actual[i] !== expected[i]) {
       return {
