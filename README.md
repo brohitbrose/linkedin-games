@@ -1,6 +1,6 @@
 # linkedin-games
 
-A Firefox- and Chrome-compatible browser plugin to solve daily LinkedIn Games puzzles. Currently supports:
+A Firefox- and Chrome-compatible browser plugin to solve daily LinkedIn Games puzzles. Currently supports (note: the links below open https://www.linkedin.com):
 
 - [Queens](https://www.linkedin.com/games/queens/)
 - [Zip](https://www.linkedin.com/games/zip/)
