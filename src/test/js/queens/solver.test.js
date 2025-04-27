@@ -1,4 +1,4 @@
-import { QueensGrid, solver } from 'queens/solver.js'
+import { QueensGrid } from 'queens/solver.js'
 
 const gridSeed = [
   // 1  2  3  4  5  6  7  8

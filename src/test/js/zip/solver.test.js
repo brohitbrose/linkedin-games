@@ -1,4 +1,4 @@
-import { ZipGrid, solver } from 'zip/solver.js';
+import { ZipGrid } from 'zip/solver.js';
 
 const gridSeed = [
   6,
@@ -72,9 +72,5 @@ test('ZipGrid.solve() generates the correct solution', () => {
       17, 11,  5, 4, 10, 16,
       22, 21, 20, 26, 27, 28
   ];
-  expect(actual.length).toBe(36);
-  expect(expected.length).toBe(36);
-  for (let i = 0; i < 36; i++) {
-    expect(actual[i]).toBe(expected[i]);
-  }
+  expect(actual).toEqual(expected);
 });

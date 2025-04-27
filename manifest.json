@@ -16,6 +16,10 @@
     {
       "matches": ["*://*.linkedin.com/games/zip*"],
       "js": ["dist/zip.js"]
+    },
+    {
+      "matches": ["*://*.linkedin.com/games/tango*"],
+      "js": ["dist/tango.js"]
     }
   ],
   "icons": {
