@@ -75,51 +75,51 @@ export class ZipGrid {
     this.#degreeModifications = Array.from({length: this.#size - 1},
       () => []);
 
-    this.#cellStatuses = this.#constructCellStatuses(m, n, this.#size,
+    this.#constructCellStatuses(m, n, this.#size,
         numberedCells, downWalls, rightWalls);
-    this.#cellStatuses[this.#head].setVisited(true);
+    this.#setVisited(this.#head, true);
   }
 
   #constructCellStatuses(m, n, size, numberedCells, downWalls, rightWalls) {
-    const result = Array.from({ length: size }, () => new ZipGridCellStatus());
+    if (numberedCells.length > (1 << 25) - 1) {
+      throw new Error("Too many numbered cells: " + this.numberedCells.length);
+    }
+    this.#cellStatuses = new Array(size).fill(4 << 0x1);
     // Decrement top and bottom border degrees once
     for (let i = 0; i < n; i++) {
-      result[i].decrementDegree();
-      result[size - n + i].decrementDegree();
+      this.#decrementDegree(i);
+      this.#decrementDegree(size - n + i);
     }
     // Decrement left and right border degrees once (thus each corner twice)
     for (let i = 0; i < m; i++) {
-      result[n * i].decrementDegree();
-      result[n * i + n - 1].decrementDegree();
+      this.#decrementDegree(n * i);
+      this.#decrementDegree(n * i + n - 1);
     }
     // Down walls
     for (const walledCell of downWalls) {
-      const cellStatus = result[walledCell];
-      cellStatus.addDownWall();
-      cellStatus.decrementDegree();
+      this.#addDownWall(walledCell);
+      this.#decrementDegree(walledCell);
       if (walledCell < size - n) {
-        result[walledCell + n].decrementDegree();
+        this.#decrementDegree(walledCell + n);
       }
     }
     // Right walls
     for (const walledCell of rightWalls) {
-      const cellStatus = result[walledCell];
-      cellStatus.addRightWall();
-      cellStatus.decrementDegree();
+      this.#addRightWall(walledCell);
+      this.#decrementDegree(walledCell);
       if (walledCell % n !== n - 1) {
-        result[walledCell + 1].decrementDegree();
+        this.#decrementDegree(walledCell + 1);
       }
     }
     // Numbered cells
     for (let i = 0; i < numberedCells.length; i++) {
-      result[numberedCells[i]].label(i + 1);
+      this.#label(numberedCells[i], i + 1);
     }
-    return result;
   }
 
   /**
-   * Returns a sequence (usually the only sequence) in which grid cells may be
-   * visited to solve the puzzle.
+   * Returns a sequence (in official puzzles, the the only sequence) in which
+   * grid cells may be visited to solve the puzzle.
    */
   solve() {
     let result;
@@ -206,7 +206,7 @@ export class ZipGrid {
   canVisitUp() {
     return this.#canVisitDirection(s => s - this.#n,
         (d, s) => d >= 0,
-        (ds, ss) => ds.hasDownWall(),
+        (ds, ss) => this.#maskHasDownWall(ds),
         [this.#visitIsolatesDown, this.#visitIsolatesLeft,
             this.#visitIsolatesRight]);
   }
@@ -215,7 +215,7 @@ export class ZipGrid {
   canVisitDown() {
     return this.#canVisitDirection(s => s + this.#n,
         (d, s) => d < this.#size,
-        (ds, ss) => ss.hasDownWall(),
+        (ds, ss) => this.#maskHasDownWall(ss),
         [this.#visitIsolatesUp, this.#visitIsolatesLeft,
             this.#visitIsolatesRight]);
   }
@@ -224,7 +224,7 @@ export class ZipGrid {
   canVisitLeft() {
     return this.#canVisitDirection(s => s - 1,
         (d, s) => s % this.#n !== 0,
-        (ds, ss) => ds.hasRightWall(),
+        (ds, ss) => this.#maskHasRightWall(ds),
         [this.#visitIsolatesUp, this.#visitIsolatesDown,
             this.#visitIsolatesRight]);
   }
@@ -233,7 +233,7 @@ export class ZipGrid {
   canVisitRight() {
     return this.#canVisitDirection(s => s + 1,
         (d, s) => s % this.#n !== this.#n - 1,
-        (ds, ss) => ss.hasRightWall(),
+        (ds, ss) => this.#maskHasRightWall(ss),
         [this.#visitIsolatesUp, this.#visitIsolatesDown,
             this.#visitIsolatesLeft]);
   }
@@ -245,9 +245,9 @@ export class ZipGrid {
     const dstStatus = this.#cellStatuses[dst];
     const srcStatus = this.#cellStatuses[src];
     let withoutIsolation = checkDstSrcBounds.call(this, dst, src)
-        && !dstStatus.isVisited()
+        && !this.#maskIsVisited(dstStatus)
         && !checkDstSrcWall.call(this, dstStatus, srcStatus)
-        && !(dstStatus.getContent() > this.#current + 1);
+        && !(this.#getMaskLabel(dstStatus) > this.#current + 1);
     if (!withoutIsolation) {
       return false;
     }
@@ -279,8 +279,7 @@ export class ZipGrid {
     if (cell < 0) {
       return false;
     }
-    const cellStatus = this.#cellStatuses[cell];
-    const degree = cellStatus.getDegree();
+    const degree = this.#getDegree(cell);
     return (cell === this.#foot && degree === 1)
         || (cell !== this.#foot && degree === 2);
   }
@@ -342,11 +341,10 @@ export class ZipGrid {
   }
 
   #visitDirection(dst, src, impactFns) {
-    const dstStatus = this.#cellStatuses[dst];
     // Mark cell as visited.
-    dstStatus.setVisited(true);
+    this.#setVisited(dst, true);
     // If dst is a circled number, update bookkeeping.
-    const dstContent = dstStatus.getContent();
+    const dstContent = this.#getLabel(dst);
     if (dstContent > 0) {
       this.#current = dstContent; 
     }
@@ -355,7 +353,7 @@ export class ZipGrid {
     for (const impactFn of impactFns) {
       const cell = impactFn.call(this, src);
       if (cell >= 0) {
-        this.#cellStatuses[cell].decrementDegree();
+        this.#decrementDegree(cell);
         newModifications.push(cell);
       }
     }
@@ -367,7 +365,7 @@ export class ZipGrid {
     if (src >= this.#n) {
       const up = src - this.#n;
       const upStatus = this.#cellStatuses[up];
-      if (!upStatus.isVisited() && !upStatus.hasDownWall()) {
+      if (!this.#maskIsVisited(upStatus) && !this.#maskHasDownWall(upStatus)) {
         return up;
       }
     }
@@ -377,9 +375,7 @@ export class ZipGrid {
   #visitImpactsDownDegree(src) {
     if (src < this.#size - this.#n) {
       const down = src + this.#n;
-      const downStatus = this.#cellStatuses[down];
-      const srcStatus = this.#cellStatuses[src];
-      if (!downStatus.isVisited() && !srcStatus.hasDownWall()) {
+      if (!this.#isVisited(down) && !this.#hasDownWall(src)) {
         return down;
       }
     }
@@ -390,7 +386,8 @@ export class ZipGrid {
     if (src % this.#n !== 0) {
       const left = src - 1;
       const leftStatus = this.#cellStatuses[left];
-      if (!leftStatus.isVisited() && !leftStatus.hasRightWall()) {
+      if (!this.#maskIsVisited(leftStatus)
+          && !this.#maskHasRightWall(leftStatus)) {
         return left;
       }
     }
@@ -400,9 +397,7 @@ export class ZipGrid {
   #visitImpactsRightDegree(src) {
     if (src % this.#n !== this.#n - 1) {
       const right = src + 1;
-      const rightStatus = this.#cellStatuses[right];
-      const srcStatus = this.#cellStatuses[src];
-      if (!rightStatus.isVisited() && !srcStatus.hasRightWall()) {
+      if (!this.#isVisited(right) && !this.#hasRightWall(src)) {
         return right;
       }
     }
@@ -419,16 +414,15 @@ export class ZipGrid {
     // Possibly revert degree modifications.
     const modifications = this.#degreeModifications[this.#visitedCells - 1];
     while (modifications.length !== 0) {
-      this.#cellStatuses[modifications.pop()].incrementDegree();
+      this.#incrementDegree(modifications.pop());
     }
     // Possibly revert last-found circled number, 
-    const moveStatus = this.#cellStatuses[lastMove];
-    const moveContent = moveStatus.getContent();
-    if (moveContent > 0) {
-      this.#current = moveContent - 1;
+    const lastMoveLabel = this.#getLabel(lastMove);
+    if (lastMoveLabel > 0) {
+      this.#current = lastMoveLabel - 1;
     }
     // Mark cell as unvisited.
-    moveStatus.setVisited(false);
+    this.#setVisited(lastMove, false);
     return true;
   }
 
@@ -436,67 +430,80 @@ export class ZipGrid {
     return this.#path[this.#visitedCells - 1];
   }
 
-}
+  // All methods below bitfield operations that could be extracted into a new
+  // class, but JS doesn't have low-cost abstractions. :(
 
-/** Record-type class for the status of a single Zip cell. */
-class ZipGridCellStatus {
-
-  #isVisited;
-  #content;
-  #degree;
-  #hasDownWall;
-  #hasRightWall;
-
-  constructor() {
-    this.#isVisited = false;
-    this.#content = -1;
-    this.#degree = 4;
-    this.#hasDownWall = false;
-    this.#hasRightWall = false;
+  // Bit 0.
+  #isVisited(cell) {
+    return this.#maskIsVisited(this.#cellStatuses[cell]);
   }
 
-  isVisited() {
-    return this.#isVisited;
+  #maskIsVisited(mask) {
+    return (mask & 1) === 1;
   }
 
-  setVisited(visited) {
-    this.#isVisited = visited;
+  #setVisited(cell, visited) {
+    if (visited) {
+      this.#cellStatuses[cell] |= 0x1;
+    } else {
+      this.#cellStatuses[cell] &= ~0x1;
+    }
   }
 
-  label(number) {
-    this.#content = number;
+  // Bits 1-3.
+  #getDegree(cell) {
+    return this.#getMaskDegree(this.#cellStatuses[cell]);
   }
 
-  getContent() {
-    return this.#content;
+  #getMaskDegree(mask) {
+    return (mask & 0xE) >>> 1;
   }
 
-  getDegree() {
-    return this.#degree;
+  #decrementDegree(cell) {
+    this.#cellStatuses[cell] -= 0x2;
   }
 
-  decrementDegree() {
-    this.#degree--;
+  #incrementDegree(cell) {
+    this.#cellStatuses[cell] += 0x2;
   }
 
-  incrementDegree() {
-    this.#degree++;
+  // Bit 4.
+  #hasDownWall(cell) {
+    return this.#maskHasDownWall(this.#cellStatuses[cell]);
   }
 
-  hasDownWall() {
-    return this.#hasDownWall;
+  #maskHasDownWall(mask) {
+    return (mask & 0x10) !== 0;
   }
 
-  addDownWall() {
-    this.#hasDownWall = true;
+  #addDownWall(cell) {
+    this.#cellStatuses[cell] |= 0x10;
   }
 
-  hasRightWall() {
-    return this.#hasRightWall;
+  // Bit 5.
+  #hasRightWall(cell) {
+    return this.#maskHasRightWall(this.#cellStatuses[cell]);
   }
 
-  addRightWall() {
-    this.#hasRightWall = true;
+  #maskHasRightWall(mask) {
+    return (mask & 0x20) !== 0;
+  }
+
+  #addRightWall(cell) {
+    this.#cellStatuses[cell] |= 0x20;
+  }
+
+  // Bits 6-30 (avoid 31 due to negative number annoyances).
+  #getLabel(cell) {
+    return this.#getMaskLabel(this.#cellStatuses[cell]);
+  }
+
+  #getMaskLabel(mask) {
+    return mask >>> 6;
+  }
+
+  #label(cell, number) {
+    this.#cellStatuses[cell] |= (number << 6);
   }
 
 }
