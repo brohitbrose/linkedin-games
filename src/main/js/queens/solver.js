@@ -18,7 +18,7 @@ export class QueensGrid {
 
   /**
    * Tracks how many diagonal neighbors are responsible for making each cell
-   * in the grid unmarkable as a queen.
+   * in the grid unmarkable as a queen (possible range is [0, 2]).
    */
   #diagNeighbors;
 
@@ -29,7 +29,7 @@ export class QueensGrid {
   #colorsToIndices;
 
   /**
-   * Maps each 2D index to its color.
+   * Maps each 1D index to its color.
    */ 
   #indicesToColors;
 
