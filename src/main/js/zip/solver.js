@@ -206,7 +206,7 @@ export class ZipGrid {
   canVisitUp() {
     return this.#canVisitDirection(s => s - this.#n,
         (d, s) => d >= 0,
-        (ds, ss) => this.#maskHasDownWall(ds),
+        (ds, ss) => this.maskHasDownWall(ds),
         [this.#visitIsolatesDown, this.#visitIsolatesLeft,
             this.#visitIsolatesRight]);
   }
@@ -215,7 +215,7 @@ export class ZipGrid {
   canVisitDown() {
     return this.#canVisitDirection(s => s + this.#n,
         (d, s) => d < this.#size,
-        (ds, ss) => this.#maskHasDownWall(ss),
+        (ds, ss) => this.maskHasDownWall(ss),
         [this.#visitIsolatesUp, this.#visitIsolatesLeft,
             this.#visitIsolatesRight]);
   }
@@ -224,7 +224,7 @@ export class ZipGrid {
   canVisitLeft() {
     return this.#canVisitDirection(s => s - 1,
         (d, s) => s % this.#n !== 0,
-        (ds, ss) => this.#maskHasRightWall(ds),
+        (ds, ss) => this.maskHasRightWall(ds),
         [this.#visitIsolatesUp, this.#visitIsolatesDown,
             this.#visitIsolatesRight]);
   }
@@ -233,7 +233,7 @@ export class ZipGrid {
   canVisitRight() {
     return this.#canVisitDirection(s => s + 1,
         (d, s) => s % this.#n !== this.#n - 1,
-        (ds, ss) => this.#maskHasRightWall(ss),
+        (ds, ss) => this.maskHasRightWall(ss),
         [this.#visitIsolatesUp, this.#visitIsolatesDown,
             this.#visitIsolatesLeft]);
   }
@@ -245,9 +245,9 @@ export class ZipGrid {
     const dstStatus = this.#cellStatuses[dst];
     const srcStatus = this.#cellStatuses[src];
     let withoutIsolation = checkDstSrcBounds.call(this, dst, src)
-        && !this.#maskIsVisited(dstStatus)
+        && !this.maskIsVisited(dstStatus)
         && !checkDstSrcWall.call(this, dstStatus, srcStatus)
-        && !(this.#getMaskLabel(dstStatus) > this.#current + 1);
+        && !(this.getMaskLabel(dstStatus) > this.#current + 1);
     if (!withoutIsolation) {
       return false;
     }
@@ -365,7 +365,7 @@ export class ZipGrid {
     if (src >= this.#n) {
       const up = src - this.#n;
       const upStatus = this.#cellStatuses[up];
-      if (!this.#maskIsVisited(upStatus) && !this.#maskHasDownWall(upStatus)) {
+      if (!this.maskIsVisited(upStatus) && !this.maskHasDownWall(upStatus)) {
         return up;
       }
     }
@@ -386,8 +386,8 @@ export class ZipGrid {
     if (src % this.#n !== 0) {
       const left = src - 1;
       const leftStatus = this.#cellStatuses[left];
-      if (!this.#maskIsVisited(leftStatus)
-          && !this.#maskHasRightWall(leftStatus)) {
+      if (!this.maskIsVisited(leftStatus)
+          && !this.maskHasRightWall(leftStatus)) {
         return left;
       }
     }
@@ -435,10 +435,10 @@ export class ZipGrid {
 
   // Bit 0.
   #isVisited(cell) {
-    return this.#maskIsVisited(this.#cellStatuses[cell]);
+    return this.maskIsVisited(this.#cellStatuses[cell]);
   }
 
-  #maskIsVisited(mask) {
+  maskIsVisited(mask) {
     return (mask & 1) === 1;
   }
 
@@ -452,10 +452,10 @@ export class ZipGrid {
 
   // Bits 1-3.
   #getDegree(cell) {
-    return this.#getMaskDegree(this.#cellStatuses[cell]);
+    return this.getMaskDegree(this.#cellStatuses[cell]);
   }
 
-  #getMaskDegree(mask) {
+  getMaskDegree(mask) {
     return (mask & 0xE) >>> 1;
   }
 
@@ -469,10 +469,10 @@ export class ZipGrid {
 
   // Bit 4.
   #hasDownWall(cell) {
-    return this.#maskHasDownWall(this.#cellStatuses[cell]);
+    return this.maskHasDownWall(this.#cellStatuses[cell]);
   }
 
-  #maskHasDownWall(mask) {
+  maskHasDownWall(mask) {
     return (mask & 0x10) !== 0;
   }
 
@@ -482,10 +482,10 @@ export class ZipGrid {
 
   // Bit 5.
   #hasRightWall(cell) {
-    return this.#maskHasRightWall(this.#cellStatuses[cell]);
+    return this.maskHasRightWall(this.#cellStatuses[cell]);
   }
 
-  #maskHasRightWall(mask) {
+  maskHasRightWall(mask) {
     return (mask & 0x20) !== 0;
   }
 
@@ -495,10 +495,10 @@ export class ZipGrid {
 
   // Bits 6-30 (avoid 31 due to negative number annoyances).
   #getLabel(cell) {
-    return this.#getMaskLabel(this.#cellStatuses[cell]);
+    return this.getMaskLabel(this.#cellStatuses[cell]);
   }
 
-  #getMaskLabel(mask) {
+  getMaskLabel(mask) {
     return mask >>> 6;
   }
 
