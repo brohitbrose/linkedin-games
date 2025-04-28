@@ -115,44 +115,53 @@ export class TangoGrid {
 
 }
 
-/** At-most-once, ringbuffer-implemented queue for numbers in [0, 11]. */
-class TangoLineQueue {
+/** At-most-once, bit-implemented queue for numbers in [0, 11]. */
+export class TangoLineQueue {
 
   static #CAPACITY = 12;
 
-  #buffer;
+  #bufferLittle; // bits 0-31
+  #bufferBig; // bits 32-47
   #linePresences;
-  #head;
-  #tail;
   #size;
 
   constructor() {
-    this.#buffer = new Array(TangoLineQueue.#CAPACITY);
-    this.#linePresences = new Array(TangoLineQueue.#CAPACITY).fill(false);
-    this.#head = 0;
-    this.#tail = 0;
+    this.#bufferLittle = 0;
+    this.#bufferBig = 0;
+    this.#linePresences = 0;
     this.#size = 0;
   }
 
   // Prerequisite: 0 <= line < CAPACITY
   offer(line) {
-    if (!this.#linePresences[line]) {
-      this.#buffer[this.#tail] = line;
-      this.#tail = (this.#tail + 1) % TangoLineQueue.#CAPACITY;
-      this.#linePresences[line] = true;
-      this.#size++;
+    const lineBit = (1 << line);
+    if ((this.#linePresences & lineBit) !== 0) {
+      return;
     }
+    if (this.#size < 8) {
+      this.#bufferLittle |= ((line + 1) << (this.#size << 2));
+    } else {
+      this.#bufferBig |= ((line + 1) << ((this.#size - 8) << 2));
+    }
+    this.#linePresences |= lineBit;
+    this.#size++;
   }
 
   poll() {
     if (this.isEmpty()) {
       throw new Error("Can't call poll() on empty TangoLineQueue");
     }
-    const line = this.#buffer[this.#head];
-    this.#head = (this.#head + 1) % TangoLineQueue.#CAPACITY;
+    const result = (this.#bufferLittle & 15) - 1;
+    this.#bufferLittle = (this.#bufferLittle >>> 4);
+    if (this.#size > 8) {
+      const carry = this.#bufferBig & 15;
+      this.#bufferLittle |= (carry << 28);
+      this.#bufferBig = (this.#bufferBig >>> 4);
+    }
+    // this.#linePresences -= (1 << result); // works, since bit must be set
+    this.#linePresences &= ~(1 << result); // pure bitwise alternative
     this.#size--;
-    this.#linePresences[line] = false;
-    return line;
+    return result;
   }
 
   isEmpty() {

@@ -1,4 +1,4 @@
-import { TangoGrid } from 'tango/solver.js';
+import { TangoGrid, TangoLineQueue } from 'tango/solver.js';
 import { TangoLine } from 'tango/line.js';
 import './toConsolidateTo';
 
@@ -137,6 +137,20 @@ test('Line with no non-cross cells autofills', () => {
   // Quintuple
   expect(new TangoLine(0, [], [5], [], [0, 1, 2, 3, 4]))
       .toConsolidateTo([0, -2, 2, -4, 4]);
+});
+
+test('TangoLineQueue lifecycle', () => {
+  const queue = new TangoLineQueue();
+  for (let i = 11; i >= 0; i--) {
+    queue.offer(i);
+    queue.offer(i);
+    queue.offer(i);
+  }
+  let result = 11;
+  while (!queue.isEmpty()) {
+    expect(queue.poll()).toBe(result--);
+  }
+  expect(() => queue.poll()).toThrow();
 });
 
 test('TangoGrid.solve() generates the correct solution', () => {
