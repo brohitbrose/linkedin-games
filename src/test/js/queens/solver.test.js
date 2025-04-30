@@ -1,4 +1,4 @@
-import { QueensGrid } from 'queens/solver.js'
+import { QueensGrid, solveQueens } from 'queens/solver.js'
 
 const gridSeed = [
   // 1  2  3  4  5  6  7  8
@@ -37,8 +37,7 @@ test('Placing a queen forbids others in row/column/color/locale', () => {
 });
 
 test('QueensGrid.solve() generates the correct solution', () => {
-  const grid = new QueensGrid(gridConstructorArgs);
-  const solution = grid.solve();
+  const solution = solveQueens(gridConstructorArgs);
   expect(solution.length).toBe(9);
   let found = true;
   [5, 10, 24, 31, 38, 52, 66, 80, 54]

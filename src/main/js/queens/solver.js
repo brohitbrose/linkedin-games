@@ -18,7 +18,7 @@ export class QueensGrid {
 
   /**
    * Tracks how many diagonal neighbors are responsible for making each cell
-   * in the grid unmarkable as a queen.
+   * in the grid unmarkable as a queen (possible range is [0, 2]).
    */
   #diagNeighbors;
 
@@ -29,7 +29,7 @@ export class QueensGrid {
   #colorsToIndices;
 
   /**
-   * Maps each 2D index to its color.
+   * Maps each 1D index to its color.
    */ 
   #indicesToColors;
 
@@ -117,10 +117,10 @@ export class QueensGrid {
       const j = move % this.#n;
       const i = (move - j) / this.#n;
       if (this.#canPlaceIgnoreColor(i, j)) {
-        this.#placeIgnoreColor(i, j);
+        this.#markIgnoreColor(i, j, true);
         result.push(move);
         const shortCircuit = this.#backtrack(depth + 1, result);
-        this.#unplaceIgnoreColor(i, j);
+        this.#markIgnoreColor(i, j, false);
         if (shortCircuit) {
           return true;
         } else {
@@ -135,7 +135,7 @@ export class QueensGrid {
     const flattened = this.#flatten(i, j);
     const color = this.#indicesToColors[flattened];
     if (!this.#visitedColors[color] && this.#canPlaceIgnoreColor(i, j)) {
-      this.#placeIgnoreColor(i, j);
+      this.#markIgnoreColor(i, j, true);
       this.#visitedColors[color] = true;
       this.#visitedIndices[flattened] = true;
       return true;
@@ -149,7 +149,7 @@ export class QueensGrid {
       this.#visitedIndices[flattened] = false;
       const color = this.#indicesToColors[flattened];
       this.visitedColors[color] = false;
-      this.#unplaceIgnoreColor(i, j);
+      this.#markIgnoreColor(i, j, false);
       return true;
     }
     return false;
@@ -167,22 +167,13 @@ export class QueensGrid {
     return !(this.#rows[i] || this.#cols[j] || this.#diagNeighbors[i][j] > 0);
   }
 
-  #placeIgnoreColor(i, j) {
-    this.#rows[i] = true;
-    this.#cols[j] = true;
-    this.#markUpLeft(i, j, true);
-    this.#markDownLeft(i, j, true);
-    this.#markUpRight(i, j, true);
-    this.#markDownRight(i, j, true);
-  }
-
-  #unplaceIgnoreColor(i, j) {
-    this.#rows[i] = false;
-    this.#cols[j] = false;
-    this.#markUpLeft(i, j, false);
-    this.#markDownLeft(i, j, false);
-    this.#markUpRight(i, j, false);
-    this.#markDownRight(i, j, false);
+  #markIgnoreColor(i, j, mark) {
+    this.#rows[i] = mark;
+    this.#cols[j] = mark;
+    this.#markUpLeft(i, j, mark);
+    this.#markDownLeft(i, j, mark);
+    this.#markUpRight(i, j, mark);
+    this.#markDownRight(i, j, mark);
   }
 
   #markUpLeft(i, j, mark) {
