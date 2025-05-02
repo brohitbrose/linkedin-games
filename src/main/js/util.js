@@ -15,5 +15,5 @@ export function doOneClick(clickTarget) {
   const commonClickArgs = { bubbles: true, cancelable: true, view: window};
   clickTarget.dispatchEvent(new MouseEvent('mousedown', commonClickArgs));
   clickTarget.dispatchEvent(new MouseEvent('mouseup', commonClickArgs));
-  clickTarget.dispatchEvent(new MouseEvent('click', commonClickArgs));
+  // clickTarget.dispatchEvent(new MouseEvent('click', commonClickArgs));
 }

@@ -1,67 +1,64 @@
 import { doOneClick, getGridDiv } from '../util.js';
 import { solveTango } from './solver.js';
+import { learnMarkStrategy } from './markStrategy.js';
 
 export function tangoPopupButtonOnClick() {
   // Extract relevant div from page.
   const gridDiv = getTangoGridDiv();
-  // div -> [TangoGrid, [div's clickable elements]].
-  const gridPkg = transformTangoGridDiv(gridDiv);
-  const gridArgs = gridPkg[0];
-  const clickTargets = gridPkg[1];
-  // Determine desired clicks.
-  const markSequence = solveTango(gridArgs);
-  // Execute desired clicks.
-  for (const mark of markSequence) {
-    const divToMark = clickTargets[mark.idx];
-    if (mark.color === 1) {
-      markSun(divToMark);
-    } else if (mark.color === 2) {
-      markMoon(divToMark);
+  // From the div, just retain the 'data-cell-idx' elements.
+  const cells = Array.from(gridDiv.children)
+      .filter(x => x.attributes && x.attributes.getNamedItem('data-cell-idx'));
+  // First, learn what identifies a cell as a Sun vs a Moon (unfortunately this
+  // is not 100% set in stone due to the existence of themed puzzles). Only once
+  // the strategy has been determined, proceed as usual.
+  learnMarkStrategy(cells, markStrategy => {
+    // div -> [TangoGrid, [div's clickable elements]].
+    const gridPkg = transformTangoGridDiv(cells, markStrategy);
+    const gridArgs = gridPkg[0];
+    const clickTargets = gridPkg[1];
+    // Determine desired clicks.
+    const markSequence = solveTango(gridArgs);
+    // Execute desired clicks.
+    for (const mark of markSequence) {
+      const divToMark = clickTargets[mark.idx];
+      if (mark.color === 1) {
+        markSun(divToMark);
+      } else if (mark.color === 2) {
+        markMoon(divToMark);
+      }
     }
-  }
+  });
 }
 
 function getTangoGridDiv() {
   return getGridDiv(d => d.querySelector('.lotka-grid'));
 }
 
-function transformTangoGridDiv(gridDiv) {
+function transformTangoGridDiv(cells, markStrategy) {
 
-  const filtered = Array.from(gridDiv.children)
-      .filter(x => x.attributes && x.attributes.getNamedItem('data-cell-idx'));
   const initialYellows = [];
   const initialBlues = [];
   const downEqualSigns = [];
   const downCrosses = [];
   const rightEqualSigns = [];
   const rightCrosses = [];
-  const clickTargets = new Array(filtered.length);
+  const clickTargets = new Array(cells.length);
 
-  filtered.forEach(x => {
-    const nnm = x.attributes;
+  cells.forEach(cell => {
+    const nnm = cell.attributes;
     const id = parseInt(nnm.getNamedItem('data-cell-idx').value);
-    checkLocked(x, id, initialYellows, initialBlues);
-    checkCellEdge(x, id, downEqualSigns, downCrosses, rightEqualSigns,
+    checkLocked(markStrategy, cell, id, initialYellows, initialBlues);
+    checkCellEdge(cell, id, downEqualSigns, downCrosses, rightEqualSigns,
         rightCrosses);
-    clickTargets[id] = x;
+    clickTargets[id] = cell;
   });
   return [[initialYellows, initialBlues, downEqualSigns, downCrosses,
       rightEqualSigns, rightCrosses], clickTargets];
 
   // Extracts any suns and moons.
-  function checkLocked(cellDiv, id, initialYellows, initialBlues) {
+  function checkLocked(strategy, cellDiv, id, initialYellows, initialBlues) {
     if (cellDiv.classList.contains('lotka-cell--locked')) {
-      const title = cellDiv.querySelector('.lotka-cell-content')
-          .querySelector('svg')
-          .querySelector('title')
-          .textContent;
-      if ('Sun' === title) {
-        initialYellows.push(id);
-      } else if ('Moon' === title) {
-        initialBlues.push(id);
-      } else {
-        console.error('Themed puzzles not yet supported; found title=' + title);
-      }
+      strategy.onInitialCell(cellDiv, id, initialYellows, initialBlues);
     }
   }
 
