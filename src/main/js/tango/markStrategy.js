@@ -26,7 +26,6 @@ export function learnMarkStrategy(cells, onLearn) {
 
   function observerCallback(mutations, observer) {
     // Bound the number of times we click the div, even if we learned nothing.
-    console.log('got here');
     if (++mutationCallbackCount >= 15) {
       console.error('Failed to learn strategy; fallback to default. Dump:',
           yellowTitle, blueTitle, yellowUrl, blueUrl);
