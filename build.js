@@ -3,8 +3,15 @@ const esbuild = require('esbuild');
 const contentScripts = [
   { entry: 'src/main/js/queens/queens.js', out: 'dist/queens.js' },
   { entry: 'src/main/js/zip/zip.js', out: 'dist/zip.js' },
-  { entry: 'src/main/js/tango/tango.js', out: 'dist/tango.js' },
+  { entry: 'src/main/js/tango/tango.js', out: 'dist/tango.js' }
 ];
+
+const buildBackgroundJsArgs = {
+  bundle: true,
+  entryPoints: ['src/main/js/navigationListener.js'],
+  format: 'iife',
+  outfile: 'dist/navigationListener.js'
+};
 
 const buildPopupJsArgs = {
     bundle: true,
@@ -29,5 +36,6 @@ contentScripts.forEach(({ entry, out }) => {
   }).catch(() => process.exit(1));
 });
 
+esbuild.build(buildBackgroundJsArgs).catch(() => process.exit(1));
 esbuild.build(buildPopupJsArgs).catch(() => process.exit(1));
 esbuild.build(buildPopupHtmlArgs).catch(() => process.exit(1));
