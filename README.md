@@ -39,13 +39,13 @@ Potential gotchas:
 
 ### Firefox
 
-Visit `about:debugging#/runtime/this-firefox` in your Firefox URL bar, then load a temporary extension via `manifest.json`.
+Visit `about:debugging#/runtime/this-firefox` in your Firefox URL bar, then load a temporary extension via `firefox-dist/manifest.json`.
 
 To ensure that source changes take place, make sure to run `node build.js`, then "Reload" the extension in the aforementioned link.
 
 ### Chrome
 
-Visit `chrome://extensions/` in your Chrome URL bar. With `Developer mode` enabled, load an unpacked extension via the source code's top-level folder.
+Visit `chrome://extensions/` in your Chrome URL bar. With `Developer mode` enabled, load an unpacked extension via `chrome-dist/`.
 
 To ensure that source changes take place, make sure to run `node build.js`, then "Refresh" the extension in the aforementioned link.
 
