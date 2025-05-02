@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Games Solver",
+  "version": "1.0.0",
+  "description": "Solvers for the daily LinkedIn puzzle games",
+  "background": {
+    "service_worker": "navigationListener.js"
+  },
+  "permissions": ["scripting", "activeTab", "webNavigation"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.linkedin.com/games/queens*"],
+      "js": ["queens.js"]
+    },
+    {
+      "matches": ["*://*.linkedin.com/games/zip*"],
+      "js": ["zip.js"]
+    },
+    {
+      "matches": ["*://*.linkedin.com/games/tango*"],
+      "js": ["tango.js"]
+    }
+  ],
+  "icons": {
+    "48": "icon.png"
+  }
+}
