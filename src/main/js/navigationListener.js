@@ -8,14 +8,14 @@ const gameScriptMap = {
   '/games/tango': 'tango.js',
 };
 
-chrome.webNavigation.onHistoryStateUpdated
+polyfilledBrowser.webNavigation.onHistoryStateUpdated
     .addListener(({ tabId, url }) => {
       const path = new URL(url).pathname;
       for (const [prefix, script] of Object.entries(gameScriptMap)) {
         if (path.startsWith(prefix)) {
           polyfilledBrowser.scripting.executeScript({
             target: { tabId },
-            files: [`dist/${script}`],
+            files: [`${script}`],
           }).catch(err => console.error('Injection failed', err));
         }
       }

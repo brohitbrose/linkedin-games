@@ -4,28 +4,28 @@
   "version": "0.1.3",
   "description": "Solvers for the daily LinkedIn puzzle games",
   "background": {
-    "service_worker": "dist/navigationListener.js"
+    "service_worker": "navigationListener.js"
   },
   "permissions": ["scripting", "activeTab", "webNavigation"],
   "action": {
-    "default_popup": "dist/popup.html",
-    "default_icon": "src/assets/img/icon.png"
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
   },
   "content_scripts": [
     {
       "matches": ["*://*.linkedin.com/games/queens*"],
-      "js": ["dist/queens.js"]
+      "js": ["queens.js"]
     },
     {
       "matches": ["*://*.linkedin.com/games/zip*"],
-      "js": ["dist/zip.js"]
+      "js": ["zip.js"]
     },
     {
       "matches": ["*://*.linkedin.com/games/tango*"],
-      "js": ["dist/tango.js"]
+      "js": ["tango.js"]
     }
   ],
   "icons": {
-    "48": "src/assets/img/icon.png"
+    "48": "icon.png"
   }
 }
