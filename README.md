@@ -53,6 +53,8 @@ To ensure that source changes take place, make sure to run `node build.js`, then
 
 ### Queens
 
+<details><summary>(Expand for overview)</summary>
+
 The Queens solver uses a comically simple recursive, short-circuiting backtracking algorithm.
 
 ```
@@ -82,36 +84,110 @@ Some notes on how we determine queen placement validity:
 
 - With color choice being one-to-one with recursion depth, we do not have to explicitly track color validity.
 - The bookkeeping to track row/column validity is trivially handled via boolean array(s) or bitfields.
-- For tracking locale validity (i.e. ensuring that all neighboring cells of a placed queen are marked as invalid), notice that row/column validity already handles everything but diagonal neighbors. Thus, we simply tack on a per-cell counter that identifies how many already-placed queens diagonally touch this cell.
-The number is at most 2, as in the following example:
+- For tracking locale validity (i.e. ensuring that all neighboring cells of a placed queen are marked as invalid), notice that row/column validity already handles everything but diagonal neighbors.
+Thus, we simply tack on a per-cell counter that identifies how many already-placed queens diagonally touch this cell.
+Any counter is at most 2, as in the following example:
 
 ```
-..000000..
-..010100..
-..00Q000..
-..010201..
-..0000Q0..
-..000101..
+. . . . . . . . .
+. . 0 0 0 0 0 . .
+. . 1 0 1 0 0 . .
+. . 0 * 0 0 0 . .
+. . 1 0 2 0 1 . .
+. . 0 0 0 * 0 . .
+. . 0 0 1 0 1 . .
+. . . . . . . . .
 ```
+
+</details>
 
 ### Zip
+
+<details><summary>(Expand for overview)</summary>
 
 The Zip solver uses the exact same baseline algorithm as the one for Queens: try exploring in a depth-first manner while abiding by constraints all constraints and backtracking as needed, and short-circuit return whenever we achieve the required depth.
 
 The only noteworthy mention here is a cell degree based *path pruning* strategy atop the *explicit rules* (which are themselves few and really only forbid wall- or self-crossing paths).
 See the doc comments for `ZipGrid#canVisitUp` in [solver.js](./src/main/js/zip/solver.js) for a detailed explanation of the pruning strategy.
 
+</details>
+
 ### Tango
 
-Stay tuned!
+<details><summary>(Expand for overview [warning: long!])</summary>
 
-<!-- Solving Tango is very easily achievable via backtracking as well, but we opted for an additional challenge: can we code a solution that works with zero guesswork involved,
+Backtracking trivially solves Tango, too--but brute-forcing isn't very satisfying, and we've already done it twice.
+Given that LinkedIn promises the following:
 
-First, a few observations:
+- Each puzzle has **one right answer** and can be solved via deduction (you should **never have to make a guess**)
 
-- According to the puzzle page:
-   > Each puzzle has one right answer and can be solved via deduction (you should never have to make a guess).
-- If a Tango puzzle has a unique solution, then there must be at least one cell marked as a Sun or a Moon.
-- Even though a Tango puzzle operates on a *grid*, it is really a constraint satisfaction problem on 12 distinct *lines*.
-   - This in no way implies the lines are *independent*; in fact, each of the 6 cells in a line impacts exactly one other line (the perpendicular line that intersects that that cell).
- -->
+, we implement something more elegant.
+
+#### `consolidateLine()`
+
+Though LinkedIn's definition of a "guess" is not formally specified, we'll assume that we have following guarantee:
+
+- **Invariant A:** For any provided puzzle with $`N`$ blank cells, there exists a sequence of moves $`[m_1, m_2, ..., m_N]`$ that solves the puzzle where each $`m_i`$ indicates the finalizing of some blank cell; furthermore, we can confidently make each $`m_i`$ at least as early as every $`m_{j>i}`$.
+
+This at least gets us started toward a guess-free algorithm: iterate over every blank cell, check if we can confidently mark it, do so if we can, and repeat until no blank cells remain.
+But this strategy wastes work; in the early stages of solving a puzzle, most blank cells cannot be marked, and we're checking all of them.
+Furthermore, it's quite unbounded as to what the "check if we can confidently mark a blank cell" entails.
+
+It's hard to proceed any further from here without additional assumptions.\*
+However, official Tango puzzles seem to always have a stronger guarantee than the one we mentioned:
+
+- **Invariant B:** In addition to Invariant A holding true, every $`m_i`$ can be made at the appropriate time by simply considering either the row or the column that contains it.
+
+_\* Invariant B may always be provably true given Invariant A._
+_If this is the case, then Invariant B is just a logical conclusion, not an additional assumption._
+_Unfortunately, I lack the mathematical finesse to prove this relationship myself--any takers will be greatly welcome!._
+
+If we assume that Invariant B is true, a far more practical strategy becomes possible.
+
+**Observation:** If we treat all "lines" (rows and columns) in a vacuum, a blank cell in a line can be deduced _only if_ there is at least one other cell in the line.
+
+This can be proven via contradiction: a line must have exactly one solution; if a line is blank, then both the intended solution and its complement (i.e. flip every Sun/Moon) will satisfy any equality/inequality constraints and the "no-triply-consecutive" requirement.
+
+**Observation:** If a cell isn't currently solvable, then it definitely remains unsolvable unless either its containing row its containing column column receives an update.
+
+#### Our Algorithm
+
+Let's assume that we have a `consolidateLine(line)` method that accepts a line, marks every cell that can confidently be marked (including cells that can be marked given previous marks made in `consolidateLine`), then returns the changelist of cells.
+The following algorithm provably solves an Invariant B type Tango grid while limiting the number of explored blank cells to only reasonable candidates (note: false positives are still very much possible):
+
+```
+lineQueue := [] # duplicate-free queue
+for each mark-containing line (markedLine):
+  lineQueue.offer(markedLine)
+
+while lineQueue is not empty:
+  line := lineQueue.poll()
+  newMarkedCells := consolidateLine(line)
+  for cell in newMarkedCells:
+    perp := orthogonal to line that intersects at cell
+    lineQueue.offer(perp)
+```
+
+Much better!
+But how does one actually implement `consolidateLine`?
+Well, one way to do it is exactly how most humans play the game: check for the presence of situations that generate guaranteed marks, and apply those marks.
+Many such patterns are obvious (e.g. two consecutives of a mark imply the next is the other, or one mark touching an (in)equality determines its counterpart).
+Some are quite cryptic (one that I have yet to see utilized in an official puzzle is how if the middle two cells of a line are connected by an equals, and one border cell is marked, then the other must have the other mark).
+
+The logic in [tango/line.js](./src/main/js/tango/line.js) does this.
+It has been validated against all possible line arrangements alongside a brute-force backtracker.
+
+#### Theoretically Optimal Algorithm
+
+Astute readers may notice that if we're going by known patterns anyway, why not just maintain a lookup table of every possible line status that has a solution?
+
+There are `68697` incomplete lines such that least one move can be confidently made in the line.
+By exploiting symmetry and operating on bits, we could very easily bring the size of the lookup table to hundreds of kilobytes, and with some additional optimizations very possibly into the tens of kilobytes.
+That's pretty small in some environments, but large enough to be out of the question for a simple browser extension that strives to be lightweight.
+
+We don't necessarily have to throw everything away, however.
+It turns out that there are only `1306` line combinations that both could eventually hope to bring about any solution, yet are completely _inconclusive_ in their current state.
+A table seeded with these values could supplement our current algorithm to completely prevent enqueuing lines from which we're currently going to learn nothing.
+We have chosen not to implement this since the check happens rather quickly anyway, but it does add a noteworthy elegance.
+
+</details>
