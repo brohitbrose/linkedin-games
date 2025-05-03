@@ -114,7 +114,7 @@ See the doc comments for `ZipGrid#canVisitUp` in [solver.js](./src/main/js/zip/s
 
 ### Tango
 
-<details><summary>(Expand for overview)</summary>
+<details><summary>(Expand for overview [warning: long!])</summary>
 
 Backtracking trivially solves Tango, too--but brute-forcing isn't very satisfying, and we've already done it twice.
 Given that LinkedIn promises the following:
@@ -150,8 +150,10 @@ This can be proven via contradiction: a line must have exactly one solution; if 
 
 **Observation:** If a cell isn't currently solvable, then it definitely remains unsolvable unless either its containing row its containing column column receives an update.
 
-Let's assume that we have a `consolidateLine(line)` method that accepts a line, marks every cell that can confidently be marked, then returns the changelist.
-The following algorithm provably solves an Invariant B type Tango grid while limiting the number of explored blank cells to only reasonable candidates.
+#### Our Algorithm
+
+Let's assume that we have a `consolidateLine(line)` method that accepts a line, marks every cell that can confidently be marked (including cells that can be marked given previous marks made in `consolidateLine`), then returns the changelist of cells.
+The following algorithm provably solves an Invariant B type Tango grid while limiting the number of explored blank cells to only reasonable candidates (note: false positives are still very much possible):
 
 ```
 lineQueue := [] # duplicate-free queue
@@ -166,6 +168,26 @@ while lineQueue is not empty:
     lineQueue.offer(perp)
 ```
 
-#### Theoretically Optimal Solver
+Much better!
+But how does one actually implement `consolidateLine`?
+Well, one way to do it is exactly how most humans play the game: check for the presence of situations that generate guaranteed marks, and apply those marks.
+Many such patterns are obvious (e.g. two consecutives of a mark imply the next is the other, or one mark touching an (in)equality determines its counterpart).
+Some are quite cryptic (one that I have yet to see utilized in an official puzzle is how if the middle two cells of a line are connected by an equals, and one border cell is marked, then the other must have the other mark).
+
+The logic in [tango/line.js](./src/main/js/tango/line.js) does this.
+It has been validated against all possible line arrangements alongside a brute-force backtracker.
+
+#### Theoretically Optimal Algorithm
+
+Astute readers may notice that if we're going by known patterns anyway, why not just maintain a lookup table of every possible line status that has a solution?
+
+There are `68697` incomplete lines such that least one move can be confidently made in the line.
+By exploiting symmetry and operating on bits, we could very easily bring the size of the lookup table to hundreds of kilobytes, and with some additional optimizations very possibly into the tens of kilobytes.
+That's pretty small in some environments, but large enough to be out of the question for a simple browser extension that strives to be lightweight.
+
+We don't necessarily have to throw everything away, however.
+It turns out that there are only `1306` line combinations that both could eventually hope to bring about any solution, yet are completely _inconclusive_ in their current state.
+A table seeded with these values could supplement our current algorithm to completely prevent enqueuing lines from which we're currently going to learn nothing.
+We have chosen not to implement this since the check happens rather quickly anyway, but it does add a noteworthy elegance.
 
 </details>
