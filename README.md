@@ -133,7 +133,7 @@ This at least gets us started toward a guess-free algorithm: iterate over every 
 But this strategy wastes work; in the early stages of solving a puzzle, most blank cells cannot be marked, and we're checking all of them.
 Furthermore, it's quite unbounded as to what the "check if we can confidently mark a blank cell" entails.
 
-It's hard to proceed any further from here without additional assumptions.^(\*)
+It's hard to proceed any further from here without additional assumptions.<sup>\*</sup>
 However, official Tango puzzles seem to always have a stronger guarantee than the one we mentioned:
 
 - **Invariant B:** In addition to Invariant A holding true, every $`m_i`$ can be made at the appropriate time by simply considering either the row or the column that contains it.
