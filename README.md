@@ -82,16 +82,19 @@ Some notes on how we determine queen placement validity:
 
 - With color choice being one-to-one with recursion depth, we do not have to explicitly track color validity.
 - The bookkeeping to track row/column validity is trivially handled via boolean array(s) or bitfields.
-- For tracking locale validity (i.e. ensuring that all neighboring cells of a placed queen are marked as invalid), notice that row/column validity already handles everything but diagonal neighbors. Thus, we simply tack on a per-cell counter that identifies how many already-placed queens diagonally touch this cell.
-The number is at most 2, as in the following example:
+- For tracking locale validity (i.e. ensuring that all neighboring cells of a placed queen are marked as invalid), notice that row/column validity already handles everything but diagonal neighbors.
+Thus, we simply tack on a per-cell counter that identifies how many already-placed queens diagonally touch this cell.
+Any counter is at most 2, as in the following example:
 
 ```
-..000000..
-..010100..
-..00Q000..
-..010201..
-..0000Q0..
-..000101..
+. . . . . . . . .
+. . 0 0 0 0 0 . .
+. . 1 0 1 0 0 . .
+. . 0 * 0 0 0 . .
+. . 1 0 2 0 1 . .
+. . 0 0 0 * 0 . .
+. . 0 0 1 0 1 . .
+. . . . . . . . .
 ```
 
 ### Zip
@@ -103,15 +106,19 @@ See the doc comments for `ZipGrid#canVisitUp` in [solver.js](./src/main/js/zip/s
 
 ### Tango
 
-Stay tuned!
+Backtracking trivially solves Tango, too--but brute-forcing isn't very satisfying, and we've already done it twice.
+Given that LinkedIn promises the following:
 
-<!-- Solving Tango is very easily achievable via backtracking as well, but we opted for an additional challenge: can we code a solution that works with zero guesswork involved,
+> Each puzzle has one right answer and can be solved via deduction (you should never have to make a guess)
 
-First, a few observations:
+, we strive for something more elegant.
 
-- According to the puzzle page:
-   > Each puzzle has one right answer and can be solved via deduction (you should never have to make a guess).
-- If a Tango puzzle has a unique solution, then there must be at least one cell marked as a Sun or a Moon.
-- Even though a Tango puzzle operates on a *grid*, it is really a constraint satisfaction problem on 12 distinct *lines*.
-   - This in no way implies the lines are *independent*; in fact, each of the 6 cells in a line impacts exactly one other line (the perpendicular line that intersects that that cell).
- -->
+#### `consolidateLine()`
+
+Though LinkedIn's definition of a "guess" is not formally specified, we'll assume that it translates to the following guarantee:
+
+> For any provided puzzle with $`N`$ blank spaces, there exists a sequence of moves $`[m_1, m_2, ..., m_N]`$ that solves the puzzle where $`m_i`$ can be deduced before any $`m_{j>i}`$.
+
+
+
+#### Theoretically Optimal Solver
