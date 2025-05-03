@@ -144,7 +144,7 @@ _Unfortunately, I lack the mathematical finesse to prove this relationship mysel
 
 If we assume that Invariant B is true, a far more practical strategy becomes possible.
 
-**Observation:** If we treat all "lines" (rows and columns) in a vacuumn, a blank cell in a line can be deduced _only if_ there is at least one other cell in the line.
+**Observation:** If we treat all "lines" (rows and columns) in a vacuum, a blank cell in a line can be deduced _only if_ there is at least one other cell in the line.
 
 This can be proven via contradiction: a line must have exactly one solution; if a line is blank, then both the intended solution and its complement (i.e. flip every Sun/Moon) will satisfy any equality/inequality constraints and the "no-triply-consecutive" requirement.
 
