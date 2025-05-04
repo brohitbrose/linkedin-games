@@ -33,7 +33,12 @@ Potential gotchas:
 
 ### Unit Test Execution Instructions
 
-- `npm test`
+- `npm test` for every unit test except for one.
+
+- `npm run test:slow` performs an involved test that validates the strategic Tango solver against a brute-force solver; both are supplied every possible line state (including invalid ones), of which there are $`3^{27}`$.
+
+A CI/CD pipeline should run both.
+A developer can get away with just the former unless they're making significant changes to `src/main/js/tango/line.js`.
 
 ## From-Source Browser Installation Instructions
 
@@ -151,7 +156,7 @@ This can be proven via contradiction: a line must have exactly one solution; if 
 
 **Observation:** If a cell isn't currently solvable, then it definitely remains unsolvable unless either its containing row its containing column column receives an update.
 
-#### Our Algorithm
+#### Strategic Algorithm
 
 Let's assume that we have a `consolidateLine(line)` method that accepts a line, marks every cell that can confidently be marked (including cells that can be marked given previous marks made in `consolidateLine`), then returns the changelist of cells.
 The following algorithm provably solves an Invariant B type Tango grid while limiting the number of explored blank cells to only reasonable candidates (note: false positives are still very much possible):
@@ -176,15 +181,15 @@ Many such patterns are obvious (e.g. two consecutives of a mark imply the next i
 Some are quite cryptic (one that I have yet to see utilized in an official puzzle is how if the middle two cells of a line are connected by an equals, and one border cell is marked, then the other must have the other mark).
 
 The logic in [tango/line.js](./src/main/js/tango/line.js) does this.
-It has been validated against all possible line arrangements alongside a brute-force backtracker.
+It has been [validated against all possible line arrangements alongside a brute-force backtracker](./src/test/js/tango/strategicExhaustiveEquivalence.slowtest.js).
 
 #### Theoretically Optimal Algorithm
 
-Astute readers may notice that if we're going by known patterns anyway, why not just maintain a lookup table of every possible line status that has a solution?
+Astute readers may notice that if we're going by known patterns anyway, why not just maintain a lookup table of every possible line status that consolidates to nonempty?
 
-There are `68697` incomplete lines such that least one move can be confidently made in the line.
-By exploiting symmetry and operating on bits, we could very easily bring the size of the lookup table to hundreds of kilobytes, and with some additional optimizations very possibly into the tens of kilobytes.
-That's pretty small in some environments, but large enough to be out of the question for a simple browser extension that strives to be lightweight.
+There are `22748` incomplete lines such that least one move can be confidently made in the line.
+By exploiting symmetry and operating on bits, we could very easily bring the size of the lookup table to dozens of kilobytes, and with some additional optimizations very possibly into single-digit kilobytes.
+That's pretty small in some environments, but large enough to be suspicious for a simple browser extension that strives to be lightweight.
 
 We don't necessarily have to throw everything away, however.
 It turns out that there are only `1306` line combinations that both could eventually hope to bring about any solution, yet are completely _inconclusive_ in their current state.

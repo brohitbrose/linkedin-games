@@ -10,6 +10,7 @@ export class TangoLine {
   #id;
   #cellColors;
   #equalSigns;
+  #equalSignEntanglements
   #crosses;
   #crossEntanglements;
   #yellowCount;
@@ -26,7 +27,7 @@ export class TangoLine {
     assertInRange(equalSigns, 0, TangoLine.#DIMENSION - 2, "equalSigns");
     assertInRange(crosses, 0, TangoLine.#DIMENSION - 2, "crosses");
 
-    // 3+ equals never valid; 2+ valid only if one in beginning, one at end.        
+    // 3+ equals never valid; 2 valid only in specific placements.
     this.#equalSigns = [...new Set(equalSigns)].sort((a, b) => a - b);
     if (this.#equalSigns.length > 2) {
       throw new Error("Too many equal signs: " + this.#equalSigns
@@ -35,7 +36,7 @@ export class TangoLine {
       const first = this.#equalSigns[0];
       const last = this.#equalSigns[1];
       const diff = this.#equalSigns[1] - this.#equalSigns[0];
-      if (diff !== 4 && diff !== -4) {
+      if (diff !== 4 && diff !== -4 && diff !== 2 && diff !== -2) {
         throw new Error("Too close equal signs: " + this.#equalSigns
             + " (id=" + id + ")");
       }
@@ -62,6 +63,8 @@ export class TangoLine {
 
     // Compute a small handful of "if cell a is marked with foo, then mark b
     // with bar" relationships in advance.
+    this.#equalSignEntanglements =
+        computeEqualSignEntanglements(this.#equalSigns);
     this.#crossEntanglements = computeCrossEntanglements(this.#crosses);
 
     function assertInRange(arr, low, high, prefix) {
@@ -93,6 +96,26 @@ export class TangoLine {
           increment.call(context);
         }
       }
+    }
+
+    function computeEqualSignEntanglements(equalSigns) {
+      const result = [];
+      if (equalSigns.length === 1) {
+        if (equalSigns[0] === 0) {
+          result.push(3);
+          result.push(4);
+        } else if (equalSigns[0] === 4) {
+          result.push(1);
+          result.push(2);
+        } else if (equalSigns[0] === 1) {
+          result.push(4);
+          result.push(5);
+        } else if (equalSigns[0] === 3) {
+          result.push(0);
+          result.push(1);
+        }
+      }
+      return result;
     }
 
     function computeCrossEntanglements(crosses) {
@@ -178,7 +201,8 @@ export class TangoLine {
     result = Math.max(result, this.#checkMiddleEqual(changeList));
     result = Math.max(result, this.#checkBasicCross(changeList));
     result = Math.max(result, this.#checkEmptySingleDoubleCross(changeList));
-    result = Math.max(result, this.#checkEntangledCells(changeList));
+    result = Math.max(result, this.#checkEqualSignEntangledCells(changeList));
+    result = Math.max(result, this.#checkCrossEntangledCells(changeList));
     return result;
   }
 
@@ -487,11 +511,34 @@ export class TangoLine {
   // either be a double or a quadruple) must be of the other color.
   //
   // Note that such "entangled" relationships are known at construction time.
-  #checkEntangledCells(changeList) {
+  #checkCrossEntangledCells(changeList) {
     if (this.#crossEntanglements.length === 2) {
       const first = this.#crossEntanglements[0];
       const firstColor = this.#cellColors[first];
       const last = this.#crossEntanglements[1];
+      const lastColor = this.#cellColors[last];
+      if (firstColor === TangoLine.#EMPTY_COLOR
+          && lastColor !== TangoLine.#EMPTY_COLOR) {
+        this.#assignColor(first, this.#otherColor(lastColor), changeList);
+        return 1;
+      } else if (firstColor !== TangoLine.#EMPTY_COLOR
+          && lastColor === TangoLine.#EMPTY_COLOR) {
+        this.#assignColor(last, this.#otherColor(firstColor), changeList);
+        return 1;
+      }
+    }
+    return 0;
+  }
+
+  // If an equal sign is present at index 1 and 3/4 are marked, then 4/3 must be
+  // the other color (same for 3, 1/2).
+  //
+  // Note that this "entangled" relationship is known at construction time.
+  #checkEqualSignEntangledCells(changeList) {
+    if (this.#equalSignEntanglements.length === 2) {
+      const first = this.#equalSignEntanglements[0];
+      const firstColor = this.#cellColors[first];
+      const last = this.#equalSignEntanglements[1];
       const lastColor = this.#cellColors[last];
       if (firstColor === TangoLine.#EMPTY_COLOR
           && lastColor !== TangoLine.#EMPTY_COLOR) {
@@ -576,6 +623,14 @@ export class TangoLine {
             + " (id=" + this.#id + ")");
       }
     }
+  }
+
+  debug() {
+    console.log('strategic:', JSON.stringify({
+      cellColors: this.#cellColors,
+      equalSigns: this.#equalSigns,
+      crosses: this.#crosses
+    }));
   }
 
 }
