@@ -137,7 +137,7 @@ function tangoLineFromSeed(seed) {
     } else if (data === 2) {
       blueCells.push(i);
     } else if (data !== 0) {
-      throw new Error("Fixme strategic");
+      throw new Error("Bad seed: found 3 color, i=" + i);
     }
     seed = seed >>> 2;
   }
@@ -148,7 +148,7 @@ function tangoLineFromSeed(seed) {
     } else if (data === 2) {
       crosses.push(i);
     } else if (data !== 0) {
-      throw new Error("FIXME STRATEGIC");
+      throw new Error("Bad seed: found 3 sign, i=" + i);
     }
     seed = seed >>> 2;
   }
@@ -287,7 +287,7 @@ export class SimpleLine {
       if (data === SimpleLine.#YELLOW_COLOR || data === SimpleLine.#BLUE_COLOR) {
         cellColors[i] = data;
       } else if (data !== SimpleLine.#EMPTY_COLOR) {
-        throw new Error("Fixme");
+        throw new Error("Bad seed: found 3 color, i=" + i);
       }
       seed = seed >>> 2;
     }
@@ -296,7 +296,7 @@ export class SimpleLine {
       if (data === 1 || data === 2) {
         signs[i] = data;
       } else if (data !== 0) {
-        throw new Error("FIXME");
+        throw new Error("Bad seed: found 3 sign, i=" + i);
       }
       seed = seed >>> 2;
     }
