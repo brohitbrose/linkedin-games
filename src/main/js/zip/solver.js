@@ -118,57 +118,48 @@ export class ZipGrid {
   }
 
   /**
-   * Returns a sequence (in official puzzles, the the only sequence) in which
+   * Returns some sequence (in official puzzles, the the only sequence) in which
    * grid cells may be visited to solve the puzzle.
    */
   solve() {
-    let result;
-    if (result = this.#backtrack()) {
-      return result;
-    } else {
+    let callStack = [];
+    let path;
+    this.#stackPushValidMoves(callStack, this.#head);
+    while (callStack.length !== 0) {
+      if (this.#visitedCells === this.#size) {
+        path = [...this.#path];
+        break;
+      }
+      const [from, to, doVisit] = callStack.pop();
+      while (this.lastMove() !== from) {
+        this.unvisit();
+      }
+      doVisit.call(this, to, from);
+      this.#stackPushValidMoves(callStack, to);
+    }
+    // Unwind internal state (short-circuiting potentially skips).
+    while (this.#visitedCells > 1) {
+      this.unvisit();
+    }
+    if (!path) {
       throw new Error("No solutions found");
     }
+    return path;
   }
 
-  // Recursive backtracking function that short-circuit-returns the first-found
-  // valid solution.
-  // TODO: Implement this iteratively. In Queens, the number of stack frames is
-  //  maximally the board dimension, which I've never seen exceed 11 in a real
-  //  puzzle. In Zip, it's the number of cells, which I've seen go up to 64, and
-  //  the use of the helper function compounds this number.
-  #backtrack() {
-    if (this.#visitedCells === this.#size) {
-      return [...this.#path];
+  #stackPushValidMoves(stack, from) {
+    if (this.canVisitRight()) {
+      stack.push([from, from + 1, this.#doVisitRight]);
     }
-    const move = this.lastMove();
-    let result;
-    if (result = this.#tryDirection(this.canVisitUp(), move - this.#n, move,
-        this.#doVisitUp)) {
-      return result;
+    if (this.canVisitLeft()) {
+      stack.push([from, from - 1, this.#doVisitLeft]);
     }
-    if (result = this.#tryDirection(this.canVisitDown(), move + this.#n,
-        move, this.#doVisitDown)) {
-      return result;
+    if (this.canVisitDown()) {
+      stack.push([from, from + this.#n, this.#doVisitDown]);
     }
-    if (result = this.#tryDirection(this.canVisitLeft(), move - 1, move,
-        this.#doVisitLeft)) {
-      return result;
+    if (this.canVisitUp()) {
+      stack.push([from, from - this.#n, this.#doVisitUp]);
     }
-    if (result = this.#tryDirection(this.canVisitRight(), move + 1, move,
-        this.#doVisitRight)) {
-      return result;
-    }
-    return false;
-  }
-
-  #tryDirection(canVisit, move, lastMove, doVisit) {
-    if (!canVisit) {
-      return false;
-    }
-    doVisit.call(this, move, lastMove);
-    const solution = this.#backtrack();
-    this.unvisit();
-    return solution;
   }
 
   /**

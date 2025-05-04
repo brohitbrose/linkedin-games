@@ -86,7 +86,7 @@ Some notes on how we determine queen placement validity:
 - The bookkeeping to track row/column validity is trivially handled via boolean array(s) or bitfields.
 - For tracking locale validity (i.e. ensuring that all neighboring cells of a placed queen are marked as invalid), notice that row/column validity already handles everything but diagonal neighbors.
 Thus, we simply tack on a per-cell counter that identifies how many already-placed queens diagonally touch this cell.
-Any counter is at most 2, as in the following example:
+Any counter is at most 2, as in the following example (asterisk identifies a queen):
 
 ```
 . . . . . . . . .
@@ -106,9 +106,10 @@ Any counter is at most 2, as in the following example:
 <details><summary>(Expand for overview)</summary>
 
 The Zip solver uses the exact same baseline algorithm as the one for Queens: try exploring in a depth-first manner while abiding by constraints all constraints and backtracking as needed, and short-circuit return whenever we achieve the required depth.
+There are only two noteworthy mentions here:
 
-The only noteworthy mention here is a cell degree based *path pruning* strategy atop the *explicit rules* (which are themselves few and really only forbid wall- or self-crossing paths).
-See the doc comments for `ZipGrid#canVisitUp` in [solver.js](./src/main/js/zip/solver.js) for a detailed explanation of the pruning strategy.
+- We perform the backtracking iteratively, with the help of a stack, rather than recursively.
+- We add a cell degree based *path pruning* strategy atop the *explicit rules* (which are themselves few and really only forbid wall- or self-crossing paths); see the doc comments for `ZipGrid#canVisitUp` in [solver.js](./src/main/js/zip/solver.js) for a detailed explanation of the pruning strategy.
 
 </details>
 
