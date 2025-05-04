@@ -33,7 +33,12 @@ Potential gotchas:
 
 ### Unit Test Execution Instructions
 
-- `npm test`
+- `npm test` for every unit test except for one.
+
+- `npm run test:slow` performs an involved test that validates the strategic Tango solver against a brute-force solver; both are supplied every possible line state (including invalid ones), of which there are $`3^{27}`$.
+
+A CI/CD pipeline should run both.
+A developer can get away with just the former unless they're making significant changes to `src/main/js/tango/line.js`.
 
 ## From-Source Browser Installation Instructions
 
@@ -176,7 +181,7 @@ Many such patterns are obvious (e.g. two consecutives of a mark imply the next i
 Some are quite cryptic (one that I have yet to see utilized in an official puzzle is how if the middle two cells of a line are connected by an equals, and one border cell is marked, then the other must have the other mark).
 
 The logic in [tango/line.js](./src/main/js/tango/line.js) does this.
-It has been validated against all possible line arrangements alongside a brute-force backtracker.
+It has been [validated against all possible line arrangements alongside a brute-force backtracker](./src/test/js/tango/strategicExhaustiveEquivalence.slowtest.js).
 
 #### Theoretically Optimal Algorithm
 
