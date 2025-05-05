@@ -102,6 +102,14 @@ function copyBuildArtifacts() {
     fs.copyFileSync(sourcePath, path.join(firefoxDist, file));
   }
 
+  // Remove our temporary dist/ folder.
+  fs.rm(distDir, { recursive: true }, (err) => {
+    if (err) {
+      console.warn("Failed to remove dist/", err);
+      return;
+    }
+  });
+
   console.log('Build complete. Outputs: chrome-dist/ and firefox-dist/');
 }
 
