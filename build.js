@@ -2,6 +2,8 @@ const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
 
+// const isRelease = process.argv.slice(2).contains('--release');
+
 // === CONFIG ===
 const sharedOutputFiles = [
   // Meta
@@ -58,6 +60,7 @@ async function runBuilds() {
         esbuild.build({
           entryPoints: [entry],
           bundle: true,
+          // minify: isRelease,
           format: 'iife',
           outfile: out,
         })
