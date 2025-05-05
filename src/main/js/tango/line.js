@@ -317,7 +317,7 @@ export class TangoLine {
   }
 
   // If an unmarked cell neighbors a marked border cell and both border cells
-  // are the same color, then mark this cell as the opposite color.
+  // are of COLOR, then mark this cell as OTHER_COLOR.
   #checkPureBorderPigeonhole(changeList) {
     let result = 0;
     const firstBorder = 0;
@@ -340,8 +340,8 @@ export class TangoLine {
     return result;
   }
 
-  // If an unmarked cell is part of an = and its counterpart is of a color, then
-  // mark the cell as the same color.
+  // If an unmarked cell is part of an = and its counterpart is of COLOR, then
+  // mark the cell as COLOR.
   #checkBasicEquals(changeList) {
     let result = 0;
     for (const sign of this.#equalSigns) {
@@ -358,9 +358,9 @@ export class TangoLine {
     return result;
   }
 
-  // If an unmarked cell that is part of an = touches a colored cell, then mark
-  // this cell as the opposite color. Note that for simplicity, we do not mark
-  // the other side of the equal; the next iteration of consolidateOnce() will
+  // If an unmarked cell that is part of an = touches a COLOR cell, then mark
+  // this cell as OTHER_COLOR. Note that for simplicity, we do not mark the
+  // other side of the equal; the next iteration of consolidateOnce() will
   // catch this anyway.
   #checkEqualTangentPigeonhole(changeList) {
     let result = 0;
@@ -387,7 +387,7 @@ export class TangoLine {
   }
 
   // If an unmarked border cell is part of an = and the other border cell is of
-  // a color, then mark this cell as the other color.
+  // COLOR, then mark this cell as OTHER_COLOR.
   #checkEqualBorderPigeonhole(changeList) {
     let result = 0;
     const first = 0;
@@ -412,8 +412,8 @@ export class TangoLine {
     return result;
   }
 
-  // If an = is in the middle and a border cell is of a color, then mark the
-  // other border cell as the opposite color.
+  // If an = is in the middle and a border cell is of COLOR, then mark the other
+  // border cell as OTHER_COLOR.
   #checkMiddleEqual(changeList) {
     let result = 0;
     if (this.#equalSigns.includes(2)) {
@@ -432,8 +432,8 @@ export class TangoLine {
     return result;
   }
 
-  // If an unmarked cell is part of a cross and its counterpart is of a color,
-  // then mark the cell as the opposite color.
+  // If an unmarked cell is part of a cross and its counterpart is of COLOR,
+  // then mark the cell as OTHER_COLOR.
   #checkBasicCross(changeList) {
     let result = 0;
     for (const sign of this.#crosses) {
@@ -505,10 +505,10 @@ export class TangoLine {
     return 0;
   }
 
-  // If this line has exactly two non-cross cells and one is marked, then the
-  // other must be of the other color. Also, if a marked cell is the only
-  // non-cross cell, then the outer cell of the longer cross region (it'll
-  // either be a double or a quadruple) must be of the other color.
+  // If this line has exactly two non-cross cells and one is of COLOR, then the
+  // other must be of OTHER_COLOR. Also, if a marked cell is the only non-cross
+  // cell, then the outer cell of the longer cross region (it'll either be a
+  // double or a quadruple) must be of OTHER_COLOR.
   //
   // Note that such "entangled" relationships are known at construction time.
   #checkCrossEntangledCells(changeList) {
@@ -530,8 +530,8 @@ export class TangoLine {
     return 0;
   }
 
-  // If an equal sign is present at index 1 and 3/4 are marked, then 4/3 must be
-  // the other color (same for 3, 1/2).
+  // If an equal sign is present at index 1 and either 4 or 5 is of COLOR, then
+  // 5 or 4 respectively is of OTHER_COLOR. The same goes for 3 and 0/1.
   //
   // Note that this "entangled" relationship is known at construction time.
   #checkEqualSignEntangledCells(changeList) {
