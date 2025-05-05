@@ -1,6 +1,7 @@
 export function solveZip(gridArgs) {
   const zipGrid = new ZipGrid(...gridArgs);
   const sequence = zipGrid.solve();
+  // No need to reset in-progress puzzles due to how Zip clicks work.
   return compressSequence(sequence);
 }
 

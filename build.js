@@ -2,6 +2,8 @@ const esbuild = require('esbuild');
 const fs = require('fs');
 const path = require('path');
 
+// const isRelease = process.argv.slice(2).contains('--release');
+
 // === CONFIG ===
 const sharedOutputFiles = [
   // Meta
@@ -58,6 +60,7 @@ async function runBuilds() {
         esbuild.build({
           entryPoints: [entry],
           bundle: true,
+          // minify: isRelease,
           format: 'iife',
           outfile: out,
         })
@@ -101,6 +104,14 @@ function copyBuildArtifacts() {
     fs.copyFileSync(sourcePath, path.join(chromeDist, file));
     fs.copyFileSync(sourcePath, path.join(firefoxDist, file));
   }
+
+  // Remove our temporary dist/ folder.
+  fs.rm(distDir, { recursive: true }, (err) => {
+    if (err) {
+      console.warn("Failed to remove dist/", err);
+      return;
+    }
+  });
 
   console.log('Build complete. Outputs: chrome-dist/ and firefox-dist/');
 }
