@@ -16,16 +16,12 @@ export function tangoPopupButtonOnClick() {
     const gridPkg = transformTangoGridDiv(cells, markStrategy);
     const gridArgs = gridPkg[0];
     const clickTargets = gridPkg[1];
-    // Determine desired clicks.
+    // Determine desired marks.
     const markSequence = solveTango(gridArgs);
-    // Execute desired clicks.
+    // Execute minimum clicks to achieve desired marks.
     for (const mark of markSequence) {
       const divToMark = clickTargets[mark.idx];
-      if (mark.color === 1) {
-        markSun(divToMark);
-      } else if (mark.color === 2) {
-        markMoon(divToMark);
-      }
+      markCell(markStrategy, divToMark, mark.color);
     }
   });
 }
@@ -86,13 +82,12 @@ function transformTangoGridDiv(cells, markStrategy) {
 
 }
 
-function markSun(cellDiv) {
-  doOneClick(cellDiv);
-}
-
-function markMoon(cellDiv) {
-  doOneClick(cellDiv);
-  doOneClick(cellDiv);
+function markCell(markStrategy, cellDiv, target) {
+  for (let i = markStrategy.getCellDivMark(cellDiv);
+      i !== target; i = (i + 1) % 3) {
+    console.log('initial color:', i, ', target:', target);
+    doOneClick(cellDiv);
+  }
 }
 
 window.tangoPopupButtonOnClick = tangoPopupButtonOnClick;

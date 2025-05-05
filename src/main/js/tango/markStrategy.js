@@ -10,13 +10,18 @@ import { doOneClick } from '../util.js';
 // variations.
 export function learnMarkStrategy(cells, onLearn) {
   const blankCell = cells.find(cell =>
-    !cell.classList.contains('lotka-cell--locked'));
+      !cell.classList.contains('lotka-cell--locked')
+          && cell.querySelector('.lotka-cell-content')
+              ?.querySelector('svg')
+              ?.classList
+              ?.contains('lotka-cell-empty'));
   if (!blankCell) {
     throw new Error('Couldn\'t find a blank cell to experiment on; clear the puzzle before trying again');
   }
   
   let yellowTitle, blueTitle, yellowUrl, blueUrl;
   let mutationCallbackCount = 0;
+  let onNextMutationStrategy = undefined;
   let willDisconnect = false;
   const observer = new MutationObserver(observerCallback);
   observer.observe(blankCell, {
@@ -26,10 +31,14 @@ export function learnMarkStrategy(cells, onLearn) {
 
   function observerCallback(mutations, observer) {
     // Bound the number of times we click the div, even if we learned nothing.
-    if (++mutationCallbackCount >= 15) {
+    if (++mutationCallbackCount >= 9) {
       console.error('Failed to learn strategy; fallback to default. Dump:',
           yellowTitle, blueTitle, yellowUrl, blueUrl);
-      employStrategy(new SvgTitleOnInitialCell('Sun', 'Moon'));
+      employStrategy(new SvgTitleStrategy('Sun', 'Moon'));
+      return;
+    }
+    if (onNextMutationStrategy) {
+      employStrategy(onNextMutationStrategy);
       return;
     }
     for (const mutation of mutations) {
@@ -38,8 +47,8 @@ export function learnMarkStrategy(cells, onLearn) {
       }
       // Look for newly added IMG or SVG nodes.
       for (const node of mutation.addedNodes) {
-        const didEmployStrategy = tryProcessNode(node);
-        if (didEmployStrategy) {
+        tryProcessNode(node);
+        if (onNextMutationStrategy) {
           return;
         }
       }
@@ -55,8 +64,7 @@ export function learnMarkStrategy(cells, onLearn) {
           } else if (src !== yellowUrl) {
             blueUrl = src;
             doOneClick(blankCell); // Hopefully trigger blue -> blank.
-            employStrategy(new ImgSrcOnInitialCell(yellowUrl, blueUrl));
-            return true;
+            onNextMutationStrategy = new ImgSrcStrategy(yellowUrl, blueUrl);
           }
         }
       } else if (node.nodeType === Node.ELEMENT_NODE
@@ -69,12 +77,10 @@ export function learnMarkStrategy(cells, onLearn) {
           } else if (title !== yellowTitle) {
             blueTitle = title;
             doOneClick(blankCell); // Hopefully trigger blue -> blank.
-            employStrategy(new SvgTitleOnInitialCell(yellowTitle, blueTitle));
-            return true;
+            onNextMutationStrategy = new SvgTitleStrategy(yellowTitle, blueTitle);
           }
         }
       }
-      return false;
     }
 
     function employStrategy(strategy) {
@@ -84,7 +90,7 @@ export function learnMarkStrategy(cells, onLearn) {
   }
 }
 
-class ImgSrcOnInitialCell {
+class ImgSrcStrategy {
   
   #yellowUrl;
   #blueUrl;
@@ -95,21 +101,32 @@ class ImgSrcOnInitialCell {
   }
 
   onInitialCell(cellDiv, id, initialYellows, initialBlues) {
-    const imgSrc = cellDiv.querySelector('.lotka-cell-content')
-        .querySelector('img')
-        .src;
-    if (imgSrc === this.#yellowUrl) {
+    const mark = this.getCellDivMark(cellDiv);
+    if (mark === 1) {
       initialYellows.push(id);
-    } else if (imgSrc === this.#blueUrl) {
+    } else if (mark === 2) {
       initialBlues.push(id);
     } else {
       console.warn('Ignored initial cell with unexpected src ' + imgSrc);
     }
   }
 
+  getCellDivMark(cellDiv) {
+    const imgSrc = cellDiv.querySelector('.lotka-cell-content')
+        ?.querySelector('img')
+        ?.src;
+    if (imgSrc === this.#yellowUrl) {
+      return 1;
+    } else if (imgSrc === this.#blueUrl) {
+      return 2;
+    } else {
+      return 0;
+    }
+  }
+
 }
 
-class SvgTitleOnInitialCell {
+class SvgTitleStrategy {
   
   #yellowTitle;
   #blueTitle;
@@ -120,16 +137,27 @@ class SvgTitleOnInitialCell {
   }
 
   onInitialCell(cellDiv, id, initialYellows, initialBlues) {
-    const title = cellDiv.querySelector('.lotka-cell-content')
-        .querySelector('svg')
-        .querySelector('title')
-        .textContent;
-    if (this.#yellowTitle === title) {
+    const mark = this.getCellDivMark(cellDiv);
+    if (mark === 1) {
       initialYellows.push(id);
-    } else if (this.#blueTitle === title) {
+    } else if (mark === 2) {
       initialBlues.push(id);
     } else {
       console.warn('Ignored initial cell with unexpected title ' + title);
+    }
+  }
+
+  getCellDivMark(cellDiv) {
+    const title = cellDiv.querySelector('.lotka-cell-content')
+        ?.querySelector('svg')
+        ?.querySelector('title')
+        ?.textContent;
+    if (this.#yellowTitle === title) {
+      return 1;
+    } else if (this.#blueTitle === title) {
+      return 2;
+    } else {
+      return 0;
     }
   }
 

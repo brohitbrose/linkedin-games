@@ -625,12 +625,12 @@ export class TangoLine {
     }
   }
 
-  debug() {
-    console.log('strategic:', JSON.stringify({
-      cellColors: this.#cellColors,
-      equalSigns: this.#equalSigns,
-      crosses: this.#crosses
-    }));
-  }
+  // debug() {
+  //   console.log('strategic:', JSON.stringify({
+  //     cellColors: this.#cellColors,
+  //     equalSigns: this.#equalSigns,
+  //     crosses: this.#crosses
+  //   }));
+  // }
 
 }
