@@ -31,11 +31,5 @@
     "48": "icon-48.png",
     "96": "icon-96.png",
     "128": "icon-128.png"
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "linkedin-games-solver@addons.mozilla.org",
-      "strict_min_version": "109.0"
-    }
   }
 }
