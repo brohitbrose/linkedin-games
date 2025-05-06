@@ -77,13 +77,13 @@ export class TangoGrid {
       const line = this.#lines[poll];
       const changeList = line.consolidate();
       for (const delta of changeList) {
-        this.#onDelta(line, delta, changeList, markSequence);
+        this.#onDelta(line, delta, markSequence);
       }
     }
     return markSequence;
   }
 
-  #onDelta(line, delta, changeList, markSequence) {
+  #onDelta(line, delta, markSequence) {
     const isRow = line.getId() < 6;
     // Unpack idx, color from delta, and choose appropriate output list.
     let idx, color;

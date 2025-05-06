@@ -85,9 +85,8 @@ function transformTangoGridDiv(cells, markStrategy) {
 function markCell(markStrategy, cellDiv, target) {
   for (let i = markStrategy.getCellDivMark(cellDiv);
       i !== target; i = (i + 1) % 3) {
-    console.log('initial color:', i, ', target:', target);
     doOneClick(cellDiv);
   }
 }
 
-window.tangoPopupButtonOnClick = tangoPopupButtonOnClick;
+window['tangoPopupButtonOnClick'] = tangoPopupButtonOnClick;

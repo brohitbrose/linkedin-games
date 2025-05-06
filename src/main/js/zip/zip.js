@@ -68,4 +68,4 @@ function visitCells(clickTargets, cellSequence) {
   }
 }
 
-window.zipPopupButtonOnClick = zipPopupButtonOnClick;
+window['zipPopupButtonOnClick'] = zipPopupButtonOnClick;

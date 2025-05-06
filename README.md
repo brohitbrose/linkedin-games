@@ -24,14 +24,11 @@ Note that Manifest V3 APIs are used throughout this project's source code.
 ## Build Instructions
 
 1. `npm install` (at least once, and on changes to `package*.json`)
-2. `node build.js` (at least once, and on changes to `src`)
-
-Potential gotchas:
-
-- Unit tests are currently NOT automatically run during the `node build.js` step. See the following subsection for how to run these.
-- To avoid needing to manually run `node build.js` all the time, a build server / watcher would be nice. Setting this up seemed like overkill for this simple of a plugin (read: I was lazy), but I'm open to PRs.
+2. `node build.js` (at least once, and on changes to `src`). There is an optional `--watch` flag that facilitates active development by rebuilding upon any changes to the `src/` directory. However, for your _browser_ to recognize changes, you still need reload/refresh the extension from your browser's add-on manager itself. See the [From-Source Browser Installation](#from-source-browser-installation-instructions) section for how to do this.
 
 ### Unit Test Execution Instructions
+
+Note: these unit tests are currently NOT automatically run as part of the `node build.js` step.
 
 - `npm test` for every unit test except for one.
 
