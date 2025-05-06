@@ -22,7 +22,6 @@ export function learnMarkStrategy(cells, onLearn) {
   let yellowTitle, blueTitle, yellowUrl, blueUrl;
   let mutationCallbackCount = 0;
   let onNextMutationStrategy = undefined;
-  let willDisconnect = false;
   const observer = new MutationObserver(observerCallback);
   observer.observe(blankCell, {
     attributes: true, attributeFilter: ['src'], subtree: true, childList: true

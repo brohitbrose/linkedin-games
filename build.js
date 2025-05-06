@@ -1,10 +1,17 @@
 import { build } from 'esbuild';
-import { copyFileSync, promises, rm } from 'fs';
+import { promises } from 'fs';
 import { join } from 'path';
 import { watch } from 'chokidar';
 
-const isWatchMode = process.argv.includes('--watch');
-// const isRelease = process.argv.slice(2).contains('--release');
+let isWatchMode = process.argv.includes('--watch');
+const isRelease = process.argv.includes('--release');
+const isMinify = isRelease && process.argv.includes('--minify');
+if (isRelease) {
+  if (isWatchMode) {
+    console.warn('Watcher disabled on --release');
+    isWatchMode = false;
+  }
+}
 
 const distDir = 'dist';
 const chromeDist = 'chrome-dist';
@@ -47,7 +54,7 @@ async function runBuilds() {
         build({
           entryPoints: [entry],
           bundle: true,
-          // minify: isRelease,
+          minify: isMinify,
           format: 'iife',
           outfile: out,
         })
@@ -74,8 +81,7 @@ async function runBuilds() {
     try {
       await promises.rm(distDir, { recursive: true } );
     } catch (e) {
-      console.warn('Failed to remove dist/; you may want to remove it manually',
-          e);
+      console.warn('Failed to remove dist/; try to remove it manually', e);
     }
     // Ta-da!
     console.log('Build complete. Outputs: chrome-dist/ and firefox-dist/');

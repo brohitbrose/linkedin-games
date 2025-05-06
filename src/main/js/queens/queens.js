@@ -77,4 +77,4 @@ function clickQueens(clickTargets, queenLocations, existingMarks) {
   }
 }
 
-window.queensPopupButtonOnClick = queensPopupButtonOnClick;
+window['queensPopupButtonOnClick'] = queensPopupButtonOnClick;
