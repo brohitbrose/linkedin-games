@@ -9,7 +9,7 @@
   "permissions": ["scripting", "activeTab", "webNavigation"],
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "icon.svg"
+    "default_icon": "icon-128.png"
   },
   "content_scripts": [
     {
