@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Games Solver",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Solvers for the daily LinkedIn puzzle games",
   "background": {
     "service_worker": "navigationListener.js"
