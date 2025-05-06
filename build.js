@@ -118,7 +118,7 @@ function watchAndRebuild() {
     rebuild();
   });
 
-  console.log('[Watcher] Watching for changes in src/');
+  console.log('[Watcher] Watching for changes in src/ ...');
 }
 
 runBuilds().then(() => {
