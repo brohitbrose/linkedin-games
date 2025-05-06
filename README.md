@@ -2,6 +2,9 @@
 
 https://github.com/user-attachments/assets/8c7d7c48-01db-40f8-aa06-ec2156c84417
 
+- [Install on Firefox](https://addons.mozilla.org/en-US/firefox/addon/linkedin-games-solver/)
+- Stay tuned for an official Chrome installation; you may install from source as outlined below in the meantime!
+
 A Firefox- and Chrome-compatible browser plugin to solve the daily LinkedIn Games puzzles. Currently supports (note: the links below open https://www.linkedin.com):
 
 - [Queens](https://www.linkedin.com/games/queens/)
