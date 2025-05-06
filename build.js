@@ -17,9 +17,12 @@ const distDir = 'dist';
 const chromeDist = 'chrome-dist';
 const firefoxDist = 'firefox-dist';
 
+const iconPngNames = ['16', '32', '48', '64', '96', '128']
+    .map(s => 'icon-' + s + '.png');
 const sharedOutputFiles = [
   // Meta
-  'icon.png',
+  ...iconPngNames,
+  'icon.svg',
   // Popup HTML
   'popup.html',
   // Popup entrypoint script
@@ -63,13 +66,17 @@ async function runBuilds() {
     // Copy remaining sharedOutputFiles into the dist/ directory.
     await promises.copyFile('src/assets/html/popup.html',
         `${distDir}/popup.html`)
-    await promises.copyFile('src/assets/meta/icon.png', `${distDir}/icon.png`);
+    const metaSrc = 'src/assets/meta'
+    for (const iconPngName of iconPngNames) {
+      await promises.copyFile(join(metaSrc, iconPngName),
+          join(`${distDir}`, iconPngName));
+    }
+    await promises.copyFile(join(metaSrc, 'icon.svg'), `${distDir}/icon.svg`);
 
     // Copy the correct `manifest.json` into each {BROWSER}-dist/ directory.
-    const manifestSrcDir = 'src/assets/meta';
-    await promises.copyFile(join(manifestSrcDir, 'manifest-chrome.json'),
+    await promises.copyFile(join(metaSrc, 'manifest-chrome.json'),
         join(chromeDist, 'manifest.json'));
-    await promises.copyFile(join(manifestSrcDir, 'manifest-firefox.json'),
+    await promises.copyFile(join(metaSrc, 'manifest-firefox.json'),
         join(firefoxDist, 'manifest.json'));
     // Copy sharedOutputFiles into each {BROWSER}-dist/ directory.
     for (const file of sharedOutputFiles) {
