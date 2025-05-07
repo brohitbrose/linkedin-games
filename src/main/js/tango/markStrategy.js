@@ -8,7 +8,7 @@ import { doOneClick } from '../util.js';
 // All puzzles so far have fallen into one of these two categories. Trace the
 // usage of the yellowTitle and blueTitle variables to learn how to add more
 // variations.
-export function learnMarkStrategy(cells, onLearn) {
+export function learnMarkStrategy(cells) {
   const blankCell = cells.find(cell =>
       !cell.classList.contains('lotka-cell--locked')
           && cell.querySelector('.lotka-cell-content')
@@ -18,75 +18,82 @@ export function learnMarkStrategy(cells, onLearn) {
   if (!blankCell) {
     throw new Error('Couldn\'t find a blank cell to experiment on; clear the puzzle before trying again');
   }
-  
-  let yellowTitle, blueTitle, yellowUrl, blueUrl;
-  let mutationCallbackCount = 0;
-  let onNextMutationStrategy = undefined;
-  const observer = new MutationObserver(observerCallback);
-  observer.observe(blankCell, {
-    attributes: true, attributeFilter: ['src'], subtree: true, childList: true
+
+  return new Promise(resolve => {
+    let yellowTitle, blueTitle, yellowUrl, blueUrl;
+    let mutationCallbackCount = 0;
+    let strategy = undefined;
+    const observer = new MutationObserver(observerCallback);
+    observer.observe(blankCell, {
+      attributes: true, attributeFilter: ['src'], subtree: true, childList: true
+    });
+    doOneClick(blankCell);
+
+    function observerCallback(mutations, observer) {
+      // Bound the number of times we click the div, even if we learned nothing.
+      if (++mutationCallbackCount >= 30) { // 10 cycles should be plenty.
+        console.error('Failed to learn strategy; fallback to default. Dump:',
+            yellowTitle, blueTitle, yellowUrl, blueUrl);
+        resolveStrategy(new SvgTitleStrategy('Sun', 'Moon'));
+        return;
+      }
+      if (strategy) {
+        resolveStrategy(strategy);
+        return;
+      }
+      for (const mutation of mutations) {
+        if (mutation.type !== 'childList') {
+          continue;
+        }
+        // Look for newly added IMG or SVG nodes.
+        for (const node of mutation.addedNodes) {
+          tryProcessNode(node);
+          // Don't resolve yet! Notice how in tryProcessNode, we trigger another
+          // mutation via doOneClick just before updating strategy. Ensure that
+          // this mutation takes place prior to resolving by invoking resolve()
+          // in the next callback iteration instead.
+          if (strategy) {
+            return;
+          }
+        }
+      }
+
+      function tryProcessNode(node) {
+        if (node.nodeName === 'IMG') {
+          const src = node.src;
+          if (src) {
+            if (!yellowUrl) {
+              yellowUrl = src;
+              doOneClick(blankCell); // Hopefully trigger yellow -> blue.
+            } else if (src !== yellowUrl) {
+              blueUrl = src;
+              doOneClick(blankCell); // Hopefully trigger blue -> blank.
+              strategy = new ImgSrcStrategy(yellowUrl, blueUrl);
+            }
+          }
+        } else if (node.nodeType === Node.ELEMENT_NODE
+            && node.namespaceURI === 'http://www.w3.org/2000/svg') {
+          const title = node.querySelector('title')?.textContent;
+          if (title) {
+            if (!yellowTitle) {
+              yellowTitle = title;
+              doOneClick(blankCell); // Hopefully trigger yellow -> blue.
+            } else if (title !== yellowTitle) {
+              blueTitle = title;
+              doOneClick(blankCell); // Hopefully trigger blue -> blank.
+              strategy = new SvgTitleStrategy(yellowTitle, blueTitle);
+            }
+          }
+        }
+      }
+
+      function resolveStrategy(strategy) {
+        observer.disconnect();
+        resolve(strategy);
+      }
+    }
   });
-  doOneClick(blankCell);
 
-  function observerCallback(mutations, observer) {
-    // Bound the number of times we click the div, even if we learned nothing.
-    if (++mutationCallbackCount >= 9) {
-      console.error('Failed to learn strategy; fallback to default. Dump:',
-          yellowTitle, blueTitle, yellowUrl, blueUrl);
-      employStrategy(new SvgTitleStrategy('Sun', 'Moon'));
-      return;
-    }
-    if (onNextMutationStrategy) {
-      employStrategy(onNextMutationStrategy);
-      return;
-    }
-    for (const mutation of mutations) {
-      if (mutation.type !== 'childList') {
-        continue;
-      }
-      // Look for newly added IMG or SVG nodes.
-      for (const node of mutation.addedNodes) {
-        tryProcessNode(node);
-        if (onNextMutationStrategy) {
-          return;
-        }
-      }
-    }
-
-    function tryProcessNode(node) {
-      if (node.nodeName === 'IMG') {
-        const src = node.src;
-        if (src) {
-          if (!yellowUrl) {
-            yellowUrl = src;
-            doOneClick(blankCell); // Hopefully trigger yellow -> blue.
-          } else if (src !== yellowUrl) {
-            blueUrl = src;
-            doOneClick(blankCell); // Hopefully trigger blue -> blank.
-            onNextMutationStrategy = new ImgSrcStrategy(yellowUrl, blueUrl);
-          }
-        }
-      } else if (node.nodeType === Node.ELEMENT_NODE
-          && node.namespaceURI === 'http://www.w3.org/2000/svg') {
-        const title = node.querySelector('title')?.textContent;
-        if (title) {
-          if (!yellowTitle) {
-            yellowTitle = title;
-            doOneClick(blankCell); // Hopefully trigger yellow -> blue.
-          } else if (title !== yellowTitle) {
-            blueTitle = title;
-            doOneClick(blankCell); // Hopefully trigger blue -> blank.
-            onNextMutationStrategy = new SvgTitleStrategy(yellowTitle, blueTitle);
-          }
-        }
-      }
-    }
-
-    function employStrategy(strategy) {
-      observer.disconnect();
-      onLearn.call(null, strategy);
-    }
-  }
 }
 
 class ImgSrcStrategy {

@@ -11,19 +11,20 @@ export function tangoPopupButtonOnClick() {
   // First, learn what identifies a cell as a Sun vs a Moon (unfortunately this
   // is not 100% set in stone due to the existence of themed puzzles). Only once
   // the strategy has been determined, proceed as usual.
-  learnMarkStrategy(cells, markStrategy => {
-    // div -> [TangoGrid, [div's clickable elements]].
-    const gridPkg = transformTangoGridDiv(cells, markStrategy);
-    const gridArgs = gridPkg[0];
-    const clickTargets = gridPkg[1];
-    // Determine desired marks.
-    const markSequence = solveTango(gridArgs);
-    // Execute minimum clicks to achieve desired marks.
-    for (const mark of markSequence) {
-      const divToMark = clickTargets[mark.idx];
-      markCell(markStrategy, divToMark, mark.color);
-    }
-  });
+  learnMarkStrategy(cells)
+      .then(markStrategy => {
+        // div -> [TangoGrid, [div's clickable elements]].
+        const gridPkg = transformTangoGridDiv(cells, markStrategy);
+        const gridArgs = gridPkg[0];
+        const clickTargets = gridPkg[1];
+        // Determine desired marks.
+        const markSequence = solveTango(gridArgs);
+        // Execute minimum clicks to achieve desired marks.
+        for (const mark of markSequence) {
+          const divToMark = clickTargets[mark.idx];
+          markCell(markStrategy, divToMark, mark.color);
+        }
+      });
 }
 
 function getTangoGridDiv() {
