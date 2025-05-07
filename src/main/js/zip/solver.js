@@ -1,7 +1,6 @@
 export function solveZip(gridArgs) {
   const zipGrid = new ZipGrid(...gridArgs);
   const sequence = zipGrid.solve();
-  // No need to reset in-progress puzzles due to how Zip clicks work.
   return compressSequence(sequence);
 }
 
@@ -127,18 +126,18 @@ export class ZipGrid {
     let path;
     this.#stackPushValidMoves(callStack, this.#head);
     while (callStack.length !== 0) {
-      if (this.#visitedCells === this.#size) {
-        path = [...this.#path];
-        break;
-      }
       const [from, to, doVisit] = callStack.pop();
       while (this.lastMove() !== from) {
         this.unvisit();
       }
       doVisit.call(this, to, from);
+      if (this.#visitedCells === this.#size) {
+        path = [...this.#path];
+        break;
+      }
       this.#stackPushValidMoves(callStack, to);
     }
-    // Unwind internal state (short-circuiting potentially skips).
+    // Clean up grid state prior to leaving this function.
     while (this.#visitedCells > 1) {
       this.unvisit();
     }
