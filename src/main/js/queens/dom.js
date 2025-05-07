@@ -30,14 +30,14 @@ class QueensDomApi {
   }
 
   #transformQueensGridDiv(gridDiv) {
-    const cellDivs = this.getDataCellsFromGridDiv(gridDiv);
+    const cellDivs = this.getCellDivsFromGridDiv(gridDiv);
     const queensGridArg = new Array(cellDivs.length);
     const existingMarks = new Map();
     for (const cellDiv of cellDivs) {
-      const idx = this.getIdxFromCellDiv(cellDiv);
-      const color = this.getColorFromCellDiv(cellDiv);
+      const idx = this.getCellDivIdx(cellDiv);
+      const color = this.getCellDivColor(cellDiv);
       queensGridArg[idx] = {idx: idx, color: color};
-      const existingMark = this.getExistingMarkFromCellDiv(cellDiv);
+      const existingMark = this.getCellDivExistingMark(cellDiv);
       if (existingMark) {
         existingMarks.set(idx, existingMark);
       }
@@ -73,11 +73,12 @@ class QueensDomApi {
 class QueensDomApiV0 extends QueensDomApi {
 
   getQueensGridDiv() {
-    return getGridDiv(d => d.getElementById('queens-grid'));
+    return this.#orElseThrow(getGridDiv(d => d.getElementById('queens-grid')),
+        'getQueensGridDiv', 'QueensGridDiv selector yielded nothing');
   }
 
-  getDataCellsFromGridDiv(gridDiv) {
-    const fname = 'getDataCellsFromGridDiv';
+  getCellDivsFromGridDiv(gridDiv) {
+    const fname = 'getCellDivsFromGridDiv';
     if (!gridDiv.children) {
       this.#orElseThrow(null, fname, 'gridDiv does not have any children');
     }
@@ -87,15 +88,15 @@ class QueensDomApiV0 extends QueensDomApi {
         fname, 'Failed to extract cellDivs from gridDiv');
   }
 
-  getIdxFromCellDiv(cellDiv) {
+  getCellDivIdx(cellDiv) {
     const dataCellIdx = cellDiv.attributes
         ?.getNamedItem('data-cell-idx')?.value;
-    return parseInt(this.#orElseThrow(dataCellIdx, 'getIdFromCellDiv',
+    return parseInt(this.#orElseThrow(dataCellIdx, 'getCellDivIdx',
         `Failed to parse an integer data cell ID from ${dataCellIdx}`));
   }
 
-  getColorFromCellDiv(cellDiv) {
-    const fname = 'getColorFromCellDiv';
+  getCellDivColor(cellDiv) {
+    const fname = 'getCellDivColor';
     const clazz = cellDiv.attributes?.getNamedItem('class')?.value ?? '';
     const indicator = 'cell-color-';
     const pos = clazz.indexOf(indicator);
@@ -108,7 +109,7 @@ class QueensDomApiV0 extends QueensDomApi {
         `Class pattern ${indicator}{...} did not terminate in number`);
   }
 
-  getExistingMarkFromCellDiv(cellDiv) {
+  getCellDivExistingMark(cellDiv) {
     const mark = cellDiv.attributes
         ?.getNamedItem('aria-label')?.value?.toLowerCase();
     return !mark ? 0 : mark.includes('cross') ? 1 : mark.includes('queen') ? 2

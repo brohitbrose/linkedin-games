@@ -1,5 +1,5 @@
-export function solveZip(gridArgs) {
-  const zipGrid = new ZipGrid(...gridArgs);
+export function solveZip(m, n, numberedCells, downWalls, rightWalls) {
+  const zipGrid = new ZipGrid(m, n, numberedCells, downWalls, rightWalls);
   const sequence = zipGrid.solve();
   return compressSequence(sequence);
 }
