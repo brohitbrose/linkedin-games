@@ -138,7 +138,7 @@ export class ZipGrid {
       }
       this.#stackPushValidMoves(callStack, to);
     }
-    // Unwind internal state (short-circuiting potentially skips).
+    // Clean up grid state prior to leaving this function.
     while (this.#visitedCells > 1) {
       this.unvisit();
     }
