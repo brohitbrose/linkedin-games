@@ -60,7 +60,9 @@ function transformZipGridDiv(zipGridDiv) {
   ];
 }
 
-// Synchronously dispatches the computed click events one by one.
+// Synchronously dispatches the computed click events one by one. In-progress
+// puzzles are automatically reset by the click sequence unlike with the other
+// games, so there's no extra check to do here.
 function visitCells(clickTargets, cellSequence) {
   for (const loc of cellSequence) {
     const clickTarget = clickTargets[loc];
