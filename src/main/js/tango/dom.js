@@ -25,7 +25,8 @@ class TangoDomApi {
   async autoSolve() {
     const gridDiv = this.getTangoGridDiv();
     const cellDivs = this.#getCellDivsFromGridDiv(gridDiv);
-    const markStrategy = await learnMarkStrategy(cellDivs, this.cellDivIsBlank);
+    const markStrategy = await learnMarkStrategy(cellDivs, this.cellDivIsLocked,
+        this.cellDivIsBlank);
     const tangoGridArgs =   this.#transformTangoGridDiv(cellDivs, markStrategy);
     const markSequence = solveTango(...tangoGridArgs);
     this.#markCells(cellDivs, markStrategy, markSequence);

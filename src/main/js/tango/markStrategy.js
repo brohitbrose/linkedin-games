@@ -8,16 +8,16 @@ import { doOneClick } from '../util.js';
 // All puzzles so far have fallen into one of these two categories. Trace the
 // usage of the yellowTitle and blueTitle variables to learn how to add more
 // variations.
-export function learnMarkStrategy(cellDivs, doCellDivIsBlank,
-    timeoutMs = 10000) {
-  return new Promise((resolve, reject) => {
+export function learnMarkStrategy(cellDivs, doCellDivIsLocked,
+    doCellDivIsBlank) {
+  return new Promise(async (resolve, reject) => {
     // Prerequisite: at least one blank cell.
-    const blankCell = cellDivs.find(
-      cellDiv => doCellDivIsBlank.call(null, cellDiv));
-    if (!blankCell) {
-      reject(new Error('Grid must have at least one blank cell in order for '
-          + 'the marking strategy to be dynamically learnable'));
-      return;
+    let blankCell;
+    try {
+      blankCell = await getBlankCell(cellDivs, doCellDivIsLocked,
+        doCellDivIsBlank);
+    } catch (e) {
+      return reject(e);
     }
 
     // The strategy to return.
@@ -33,11 +33,14 @@ export function learnMarkStrategy(cellDivs, doCellDivIsBlank,
       console.error('Timed out learning strategy; fallback to default. Dump:',
           yellowTitle, blueTitle, yellowUrl, blueUrl);
       resolve(new SvgTitleStrategy('Sun', 'Moon'));
-    }, timeoutMs);
+    }, 10000);
     // The number of times observerCallback() has been invoked.
     let callCount = 0;
     observer.observe(blankCell, {
-      attributes: true, attributeFilter: ['src'], subtree: true, childList: true
+      attributes: true,
+      attributeFilter: ['src'],
+      subtree: true,
+      childList: true
     });
 
     // Kickoff!
@@ -116,6 +119,55 @@ export function learnMarkStrategy(cellDivs, doCellDivIsBlank,
   });
 
 }
+
+function getBlankCell(cellDivs, doCellDivIsLocked, doCellDivIsBlank) {
+  return new Promise((resolve, reject) => {
+    let blankableCellDiv;
+    for (const cellDiv of cellDivs) {
+      if (!doCellDivIsLocked.call(null, cellDiv)) {
+        if (doCellDivIsBlank.call(null, cellDiv)) {
+          return resolve(cellDiv);
+        } else {
+          blankableCellDiv = cellDiv;
+          break;
+        }
+      }
+    }
+    if (!blankableCellDiv) {
+      return reject(new Error('All cells locked, nothing is clickable'));
+    }
+
+    const observer = new MutationObserver(observerCallback);
+    setTimeout(() => {
+      observer.disconnect();
+      reject(new Error('Timed out trying to clear cell'));
+    }, 10000);
+    let callCount = 0;
+    observer.observe(blankableCellDiv, {
+      attributes: true,
+      attributeFilter: ['src'],
+      subtree: true,
+      childList: true
+    });
+    doOneClick(blankableCellDiv);
+
+    function observerCallback(mutations, observer) {
+      if (++callCount >= 30) {
+        observer.disconnect();
+        return reject(new Error('Failed to clear cell after several clicks'));
+      }
+      for (const mutation of mutations) {
+        if (doCellDivIsBlank.call(null, blankableCellDiv)) {
+          observer.disconnect();
+          return resolve(blankableCellDiv);
+        }
+      }
+      doOneClick(blankableCellDiv);
+    }
+
+  });
+}
+
 
 class ImgSrcStrategy {
   
