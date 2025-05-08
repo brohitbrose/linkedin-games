@@ -146,7 +146,12 @@ However, official Tango puzzles seem to always have a stronger guarantee than th
 
 _\* Invariant B may always be provably true given Invariant A._
 _If this is the case, then Invariant B is just a logical conclusion, not an additional assumption._
-_Unfortunately, I lack the mathematical finesse to prove this relationship myself--any takers will be greatly welcome!._
+
+_Unfortunately, I lack the mathematical finesse to prove (or disprove) this relationship myself._
+_A programmable strategy (albeit an extremely slow one) could be the following:_
+- _Let G be a non-contradictory grid that exclusively contains lines such that no moves can be deduced from any one line at a time._
+- _Demonstrate that every possible G has multiple solutions._
+_Any takers to attempting either are greatly welcome!_
 
 If we assume that Invariant B is true, a far more practical strategy becomes possible.
 
@@ -176,7 +181,9 @@ while lineQueue is not empty:
 
 Much better!
 But how does one actually implement `consolidateLine`?
-Well, one way to do it is exactly how most humans play the game: check for the presence of situations that generate guaranteed marks, and apply those marks.
+Trivially, we perform *line-level* backtracking--much better than grid-level, but still a bit cheaty when our original goal is to implement a strategic solver.
+
+An alternative is exactly how most humans play the game: check for the presence of situations that generate guaranteed marks, and apply those marks.
 Many such patterns are obvious (e.g. two consecutives of a mark imply the next is the other, or one mark touching an (in)equality determines its counterpart).
 Some are quite cryptic (one that I have yet to see utilized in an official puzzle is how if the middle two cells of a line are connected by an equals, and one border cell is marked, then the other must have the other mark).
 
