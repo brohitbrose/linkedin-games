@@ -13,6 +13,7 @@ function compressSequence(sequence) {
   if (sequence.length === 0) {
     return result;
   }
+  result.push(sequence[0]);
   let i = 1;
   while (i < sequence.length) {
     const runStart = i - 1;
