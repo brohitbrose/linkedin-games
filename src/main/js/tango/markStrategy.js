@@ -159,8 +159,8 @@ function getBlankCell(cellDivs, doCellDivIsLocked, doCellDivIsBlank) {
       }
       for (const mutation of mutations) {
         if (doCellDivIsBlank.call(null, blankableCellDiv)) {
-          observer.disconnect();
           clearTimeout(timeoutRef);
+          observer.disconnect();
           return resolve(blankableCellDiv);
         }
       }
