@@ -64,6 +64,9 @@ class QueensDomApi {
       for (let i = existingMark; i < 2; i++) {
         doOneClick(cellDiv);
       }
+      if (existingMark === 2) {
+        existingMarks.delete(loc);
+      }
     }
     // Transform any cells that were mistakenly marked as queens to blank. Note
     // that doing these two transformations in this order should work even if
