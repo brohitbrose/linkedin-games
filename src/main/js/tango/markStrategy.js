@@ -17,6 +17,7 @@ export function learnMarkStrategy(cellDivs, doCellDivIsBlank,
     if (!blankCell) {
       reject(new Error('Grid must have at least one blank cell in order for '
           + 'the marking strategy to be dynamically learnable'));
+      return;
     }
 
     // The strategy to return.
