@@ -1,7 +1,10 @@
 import { TangoLine } from './line.js';
 
-export function solveTango(gridArgs) {
-  return new TangoGrid(...gridArgs).solve();
+export function solveTango(initialYellows, initialBlues, downEqualSigns,
+    downCrosses, rightEqualSigns, rightCrosses) {
+  return new TangoGrid(initialYellows, initialBlues, downEqualSigns,
+        downCrosses, rightEqualSigns, rightCrosses)
+      .solve();
 }
 
 export class TangoGrid {

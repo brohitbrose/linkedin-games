@@ -30,12 +30,19 @@ class QueensDomApi {
   }
 
   #transformQueensGridDiv(gridDiv) {
-    const cellDivs = this.getCellDivsFromGridDiv(gridDiv);
+    const filtered = Array.from(gridDiv.children)
+        .filter(c => this.gridDivChildIsCellDiv(c));
+    if (filtered.length === 0) {
+      this.orElseThrow(null, 'transformQueensGridDiv', 'gridDiv contained no '
+          + 'children that matched cellDiv filter');
+    }
+    const cellDivs = new Array(filtered.length);
     const queensGridArg = new Array(cellDivs.length);
     const existingMarks = new Map();
-    for (const cellDiv of cellDivs) {
+    for (const cellDiv of filtered) {
       const idx = this.getCellDivIdx(cellDiv);
       const color = this.getCellDivColor(cellDiv);
+      cellDivs[idx] = cellDiv;
       queensGridArg[idx] = {idx: idx, color: color};
       const existingMark = this.getCellDivExistingMark(cellDiv);
       if (existingMark) {
@@ -73,25 +80,18 @@ class QueensDomApi {
 class QueensDomApiV0 extends QueensDomApi {
 
   getQueensGridDiv() {
-    return this.#orElseThrow(getGridDiv(d => d.getElementById('queens-grid')),
+    return this.orElseThrow(getGridDiv(d => d.getElementById('queens-grid')),
         'getQueensGridDiv', 'QueensGridDiv selector yielded nothing');
   }
 
-  getCellDivsFromGridDiv(gridDiv) {
-    const fname = 'getCellDivsFromGridDiv';
-    if (!gridDiv.children) {
-      this.#orElseThrow(null, fname, 'gridDiv does not have any children');
-    }
-    const result = Array.from(gridDiv.children)
-        .filter(x => x.attributes?.getNamedItem('data-cell-idx'));
-    return this.#orElseThrow(result.length === 0 ? undefined : result,
-        fname, 'Failed to extract cellDivs from gridDiv');
+  gridDivChildIsCellDiv(gridDivChild) {
+    return gridDivChild.attributes?.getNamedItem('data-cell-idx');
   }
 
   getCellDivIdx(cellDiv) {
     const dataCellIdx = cellDiv.attributes
         ?.getNamedItem('data-cell-idx')?.value;
-    return parseInt(this.#orElseThrow(dataCellIdx, 'getCellDivIdx',
+    return parseInt(this.orElseThrow(dataCellIdx, 'getCellDivIdx',
         `Failed to parse an integer data cell ID from ${dataCellIdx}`));
   }
 
@@ -101,11 +101,11 @@ class QueensDomApiV0 extends QueensDomApi {
     const indicator = 'cell-color-';
     const pos = clazz.indexOf(indicator);
     if (pos < 0) {
-      this.#orElseThrow(undefined, fname,
-          `Failed to find class with pattern ${indicator}{...}; saw ${clazz}`);
+      this.orElseThrow(undefined, fname,
+          `Failed to find class with pattern ${indicator}{...}; saw: ${clazz}`);
     }
     const color = parseInt(clazz.substring(pos + indicator.length));
-    return this.#orElseThrow(Number.isNaN(color) ? null : color, fname,
+    return this.orElseThrow(Number.isNaN(color) ? null : color, fname,
         `Class pattern ${indicator}{...} did not terminate in number`);
   }
 
@@ -116,7 +116,7 @@ class QueensDomApiV0 extends QueensDomApi {
         : 0;
   }
 
-  #orElseThrow(result, fname, cause) {
+  orElseThrow(result, fname, cause) {
     if (result != null) {
       return result;
     }

@@ -31,10 +31,17 @@ class ZipDomApi {
   #transformZipGridDiv(gridDiv) {
     const rows = this.getRowsFromGridDiv(gridDiv);
     const cols = this.getColsFromGridDiv(gridDiv);
+    const filtered = Array.from(gridDiv.children)
+        .filter(c => this.gridDivChildIsCellDiv(c));
+    if (filtered.length === 0) {
+      this.orElseThrow(null, 'transformZipGridDiv', 'gridDiv contained no '
+          + 'children that matched cellDiv filter');
+    }
+    const cellDivs = new Array(filtered.length);
     const numberedCells = [], downWalls = [], rightWalls = [];
-    const cellDivs = this.getCellDivsFromGridDiv(gridDiv);
-    for (const cellDiv of cellDivs) {
+    for (const cellDiv of filtered) {
       const idx = this.getCellDivIdx(cellDiv);
+      cellDivs[idx] = cellDiv;
       const content = this.getCellDivContent(cellDiv);
       if (content > 0) {
         numberedCells[content - 1] = idx;
@@ -85,15 +92,8 @@ class ZipDomApiV0 extends ZipDomApi {
         'getColFromGridDiv', `--cols property ${prop} is not a number`);
   }
 
-  getCellDivsFromGridDiv(gridDiv) {
-    const fname = 'getCellDivsFromGridDiv';
-    if (!gridDiv.children) {
-      this.#orElseThrow(null, fname, 'gridDiv does not have any children');
-    }
-    const result = Array.from(gridDiv.children)
-        .filter(x => x.attributes?.getNamedItem('data-cell-idx'));
-    return this.#orElseThrow(result.length === 0 ? undefined : result,
-        fname, 'Failed to extract cellDivs from gridDiv');
+  gridDivChildIsCellDiv(gridDivChild) {
+    return gridDivChild.attributes?.getNamedItem('data-cell-idx');
   }
 
   getCellDivIdx(cellDiv) {
