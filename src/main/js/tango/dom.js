@@ -117,7 +117,7 @@ class TangoDomApi {
 class TangoDomApiV0 extends TangoDomApi {
 
   getTangoGridDiv() {
-    return this.#orElseThrow(getGridDiv(d => d.querySelector('.lotka-grid')),
+    return this.orElseThrow(getGridDiv(d => d.querySelector('.lotka-grid')),
         'getTangoGridDiv', 'TangoGridDiv selector yielded nothing');
   }
 
@@ -140,7 +140,7 @@ class TangoDomApiV0 extends TangoDomApi {
   getCellDivIdx(cellDiv) {
     const dataCellIdx = cellDiv.attributes
         ?.getNamedItem('data-cell-idx')?.value;
-    return parseInt(this.#orElseThrow(dataCellIdx, 'getCellDivIdx',
+    return parseInt(this.orElseThrow(dataCellIdx, 'getCellDivIdx',
         `Failed to parse an integer data cell ID from ${dataCellIdx}`));
   }
 
@@ -170,7 +170,7 @@ class TangoDomApiV0 extends TangoDomApi {
         ?.ariaLabel;
   }
 
-  #orElseThrow(result, fname, cause) {
+  orElseThrow(result, fname, cause) {
     if (result != null) {
       return result;
     }

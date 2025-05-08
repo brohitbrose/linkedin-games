@@ -71,24 +71,24 @@ class ZipDomApi {
 class ZipDomApiV0 extends ZipDomApi {
 
   getZipGridDiv() {
-    return this.#orElseThrow(
+    return this.orElseThrow(
         getGridDiv(d => d.querySelector(".grid-game-board")),
         'getZipGridDiv', 'ZipGridDiv selector yielded nothing');
   }
 
   getRowsFromGridDiv(gridDiv) {
-    const prop = this.#orElseThrow(gridDiv.style?.getPropertyValue('--rows'),
+    const prop = this.orElseThrow(gridDiv.style?.getPropertyValue('--rows'),
         'getRowFromGridDiv', 'No --rows property found in style');
     const rows = parseInt(prop);
-    return this.#orElseThrow(Number.isNaN(rows) ? null : rows,
+    return this.orElseThrow(Number.isNaN(rows) ? null : rows,
         'getRowFromGridDiv', `--rows property ${prop} is not a number`);
   }
 
   getColsFromGridDiv(gridDiv) {
-    const prop = this.#orElseThrow(gridDiv.style?.getPropertyValue('--cols'),
+    const prop = this.orElseThrow(gridDiv.style?.getPropertyValue('--cols'),
         'getColFromGridDiv', 'No --cols property found in style');
     const rows = parseInt(prop);
-    return this.#orElseThrow(Number.isNaN(rows) ? null : rows,
+    return this.orElseThrow(Number.isNaN(rows) ? null : rows,
         'getColFromGridDiv', `--cols property ${prop} is not a number`);
   }
 
@@ -99,7 +99,7 @@ class ZipDomApiV0 extends ZipDomApi {
   getCellDivIdx(cellDiv) {
     const dataCellIdx = cellDiv.attributes
         ?.getNamedItem('data-cell-idx')?.value;
-    return parseInt(this.#orElseThrow(dataCellIdx, 'getIdFromCellDiv',
+    return parseInt(this.orElseThrow(dataCellIdx, 'getIdFromCellDiv',
         `Failed to parse an integer data cell ID from ${dataCellIdx}`));
   }
 
@@ -107,7 +107,7 @@ class ZipDomApiV0 extends ZipDomApi {
     const content = cellDiv.querySelector('.trail-cell-content');
     if (content && content.textContent) {
       const parsed = parseInt(content.textContent);
-      return this.#orElseThrow(Number.isNaN(parsed) ? null : parsed,
+      return this.orElseThrow(Number.isNaN(parsed) ? null : parsed,
           'getCellDivContent', `Expected number, found ${content.textContent}`);
     }
     return -1;
@@ -121,7 +121,7 @@ class ZipDomApiV0 extends ZipDomApi {
     return cellDiv.querySelector('.trail-cell-wall--right') != null;
   }
 
-  #orElseThrow(result, fname, cause) {
+  orElseThrow(result, fname, cause) {
     if (result != null) {
       return result;
     }
