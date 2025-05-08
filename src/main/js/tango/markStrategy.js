@@ -138,7 +138,7 @@ function getBlankCell(cellDivs, doCellDivIsLocked, doCellDivIsBlank) {
     }
 
     const observer = new MutationObserver(observerCallback);
-    setTimeout(() => {
+    const timeoutRef = setTimeout(() => {
       observer.disconnect();
       reject(new Error('Timed out trying to clear cell'));
     }, 10000);
@@ -153,12 +153,14 @@ function getBlankCell(cellDivs, doCellDivIsLocked, doCellDivIsBlank) {
 
     function observerCallback(mutations, observer) {
       if (++callCount >= 30) {
+        clearTimeout(timeoutRef);
         observer.disconnect();
         return reject(new Error('Failed to clear cell after several clicks'));
       }
       for (const mutation of mutations) {
         if (doCellDivIsBlank.call(null, blankableCellDiv)) {
           observer.disconnect();
+          clearTimeout(timeoutRef);
           return resolve(blankableCellDiv);
         }
       }
