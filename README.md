@@ -37,7 +37,7 @@ Note: these unit tests are currently NOT automatically run as part of the `node 
 
 - `npm test` for every unit test except for one.
 - `npm run test:slow` performs an involved test that validates the strategic Tango solver against a brute-force solver.
-Both are supplied every possible line state (including invalid ones), of which there are $`3^{11}`$--three possible markings for each of the 6 cells (including "empty"), three possible signages for each of the 5 spaces between consecutive cells (including "none").
+Both are supplied every possible line state (including invalid ones), of which there are $`3^{11}`$&mdash;three possible markings for each of the 6 cells (including "empty"), three possible signages for each of the 5 spaces between consecutive cells (including "none").
 
 A CI/CD pipeline should run both.
 A developer can get away with just the former unless they're making significant changes to `src/main/js/tango/line.js`.
@@ -126,7 +126,7 @@ There are only two noteworthy mentions here:
 
 <details><summary>(Expand for overview [warning: long!])</summary>
 
-Backtracking trivially solves Tango, too--but brute-forcing isn't very satisfying, and we've already done it twice.
+Backtracking trivially solves Tango, too&mdash;but brute-forcing isn't very satisfying, and we've already done it twice.
 Given that LinkedIn promises the following:
 
 - Each puzzle has **one right answer** and can be solved via deduction (you should **never have to make a guess**)
@@ -187,7 +187,7 @@ while lineQueue is not empty:
 
 Much better!
 But how does one actually implement `consolidateLine`?
-Trivially, we perform *line-level* backtracking--much better than grid-level, but still a bit cheaty when our original goal is to implement a strategic solver.
+Trivially, we perform *line-level* backtracking&mdash;much better than grid-level, but still a bit cheaty when our original goal is to implement a strategic solver.
 
 An alternative is exactly how most humans play the game: check for the presence of situations that yield guaranteed marks, and apply those marks.
 Many such patterns are obvious (e.g. two consecutive cells of a mark imply the cell is the other, or one marked cell touching a nonempty sign determines its counterpart).
