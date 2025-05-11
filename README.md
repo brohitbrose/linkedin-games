@@ -2,8 +2,9 @@
 
 https://github.com/user-attachments/assets/8c7d7c48-01db-40f8-aa06-ec2156c84417
 
-- [Install on Firefox](https://addons.mozilla.org/en-US/firefox/addon/linkedin-games-solver/)
-- Stay tuned for an official Chrome installation; you may install from source as outlined below in the meantime!
+- [Install on Firefox via AMO](https://addons.mozilla.org/en-US/firefox/addon/linkedin-games-solver/)
+- [Install on Chrome via WebStore](https://chromewebstore.google.com/detail/linkedin-games-solver/ncalomlkpjgkcmfbdikdodindkkngjhp)
+- [Install from source](#from-source-browser-installation-instructions)
 
 A Firefox- and Chrome-compatible browser plugin to solve the daily LinkedIn Games puzzles. Currently supports (note: the links below open https://www.linkedin.com):
 
@@ -34,13 +35,15 @@ Note that Manifest V3 APIs are used throughout this project's source code.
 Note: these unit tests are currently NOT automatically run as part of the `node build.js` step.
 
 - `npm test` for every unit test except for one.
-
-- `npm run test:slow` performs an involved test that validates the strategic Tango solver against a brute-force solver; both are supplied every possible line state (including invalid ones), of which there are $`3^{27}`$.
+- `npm run test:slow` performs an involved test that validates the strategic Tango solver against a brute-force solver.
+Both are supplied every possible line state (including invalid ones), of which there are $`3^{11}`$--three possible markings for each of the 6 cells (including "empty"), three possible signages for each of the 5 spaces between consecutive cells (including "none").
 
 A CI/CD pipeline should run both.
 A developer can get away with just the former unless they're making significant changes to `src/main/js/tango/line.js`.
 
 ## From-Source Browser Installation Instructions
+
+`node build.js` must be run at least once before you can follow the next steps.
 
 ### Firefox
 
@@ -110,11 +113,11 @@ Any counter is at most 2, as in the following example (asterisk identifies a que
 
 <details><summary>(Expand for overview)</summary>
 
-The Zip solver uses the exact same baseline algorithm as the one for Queens: try exploring in a depth-first manner while abiding by constraints all constraints and backtracking as needed, and short-circuit return whenever we achieve the required depth.
+The Zip solver uses the exact same baseline algorithm as the one for Queens: explore in a depth-first manner while abiding by all constraints and backtracking as needed, and short-circuit return whenever we achieve the required depth.
 There are only two noteworthy mentions here:
 
-- We perform the backtracking iteratively, with the help of a stack, rather than recursively.
-- We add a cell degree based *path pruning* strategy atop the *explicit rules* (which are themselves few and really only forbid wall- or self-crossing paths); see the doc comments for `ZipGrid#canVisitUp` in [solver.js](./src/main/js/zip/solver.js) for a detailed explanation of the pruning strategy.
+- We perform the backtracking iteratively via a loop and a stack, rather than recursively.
+- We add a cell degree based *path pruning* strategy atop the *explicit rules* (which are themselves few and really only forbid wall-/boundary-crossing paths, self-crossing paths, and premature numbered cell access); see the doc comments for `ZipGrid#canVisitUp` in [solver.js](./src/main/js/zip/solver.js) for a detailed explanation of the pruning strategy.
 
 </details>
 
@@ -137,7 +140,7 @@ Though LinkedIn's definition of a "guess" is not formally specified, we'll assum
 
 This at least gets us started toward a guess-free algorithm: iterate over every blank cell, check if we can confidently mark it, do so if we can, and repeat until no blank cells remain.
 But this strategy wastes work; in the early stages of solving a puzzle, most blank cells cannot be marked, and we're checking all of them.
-Furthermore, it's quite unbounded as to what the "check if we can confidently mark a blank cell" entails.
+Furthermore, it's rather unbounded as to what exactly the "check if we can confidently mark a blank cell" step entails.
 
 It's hard to proceed any further from here without additional assumptions.\*
 However, official Tango puzzles seem to always have a stronger guarantee than the one we mentioned:
@@ -151,7 +154,9 @@ _Unfortunately, I lack the mathematical finesse to prove (or disprove) this rela
 _A programmable strategy (albeit an extremely slow one) could be the following:_
 - _Let G be a non-contradictory grid that exclusively contains lines such that no moves can be deduced from any one line at a time._
 - _Demonstrate that every possible G has multiple solutions._
-_Any takers to attempting either are greatly welcome!_
+
+_We welcome any takers to answering this question!_
+_Please let us know what you learn._
 
 If we assume that Invariant B is true, a far more practical strategy becomes possible.
 
@@ -159,11 +164,11 @@ If we assume that Invariant B is true, a far more practical strategy becomes pos
 
 This can be proven via contradiction: a line must have exactly one solution; if a line is blank, then both the intended solution and its complement (i.e. flip every Sun/Moon) will satisfy any equality/inequality constraints and the "no-triply-consecutive" requirement.
 
-**Observation:** If a cell isn't currently solvable, then it definitely remains unsolvable unless either its containing row its containing column column receives an update.
+**Observation:** If a cell isn't currently solvable, then it definitely remains unsolvable unless either its containing row or its containing column receives an update.
 
 #### Strategic Algorithm
 
-Let's assume that we have a `consolidateLine(line)` method that accepts a line, marks every cell that can confidently be marked (including cells that can be marked given previous marks made in `consolidateLine`), then returns the changelist of cells.
+Let's assume that we have a `consolidateLine(line)` method that accepts a line; it marks every cell that can confidently be marked (including cells that can be marked given previous marks made in `consolidateLine`), and it returns the changelist of cells.
 The following algorithm provably solves an Invariant B type Tango grid while limiting the number of explored blank cells to only reasonable candidates (note: false positives are still very much possible):
 
 ```
@@ -183,9 +188,9 @@ Much better!
 But how does one actually implement `consolidateLine`?
 Trivially, we perform *line-level* backtracking--much better than grid-level, but still a bit cheaty when our original goal is to implement a strategic solver.
 
-An alternative is exactly how most humans play the game: check for the presence of situations that generate guaranteed marks, and apply those marks.
-Many such patterns are obvious (e.g. two consecutives of a mark imply the next is the other, or one mark touching an (in)equality determines its counterpart).
-Some are quite cryptic (one that I have yet to see utilized in an official puzzle is how if the middle two cells of a line are connected by an equals, and one border cell is marked, then the other must have the other mark).
+An alternative is exactly how most humans play the game: check for the presence of situations that yield guaranteed marks, and apply those marks.
+Many such patterns are obvious (e.g. two consecutive cells of a mark imply the cell is the other, or one marked cell touching a nonempty sign determines its counterpart).
+Some are quite cryptic (one that I have yet to see utilized in an official puzzle is how if the middle two cells of a line are connected by an equals and one border cell is marked, then the other must have the other mark).
 
 The logic in [tango/line.js](./src/main/js/tango/line.js) does this.
 It has been [validated against all possible line arrangements alongside a brute-force backtracker](./src/test/js/tango/strategicExhaustiveEquivalence.slowtest.js).
