@@ -28,7 +28,8 @@ Note that Manifest V3 APIs are used throughout this project's source code.
 ## Build Instructions
 
 1. `npm install` (at least once, and on changes to `package*.json`)
-2. `node build.js` (at least once, and on changes to `src`). There is an optional `--watch` flag that facilitates active development by rebuilding upon any changes to the `src/` directory. However, for your _browser_ to recognize changes, you still need reload/refresh the extension from your browser's add-on manager itself. See the [From-Source Browser Installation](#from-source-browser-installation-instructions) section for how to do this.
+2. `node build.js` (at least once, and on changes to `src`).
+    - There is an optional `--watch` flag that facilitates active development by rebuilding upon any changes to the `src/` directory. However, for your _browser_ to recognize changes, you still need reload/refresh the extension from your browser's add-on manager itself. See the [From-Source Browser Installation](#from-source-browser-installation-instructions) section for how to do this.
 
 ### Unit Test Execution Instructions
 
