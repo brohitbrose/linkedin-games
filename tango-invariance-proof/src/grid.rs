@@ -1,19 +1,27 @@
 use std::{fmt::{Debug, Display}, mem::MaybeUninit};
 
-pub fn generate_ambiguous_line_masks() -> Vec<i32> {
-  let mut result = Vec::with_capacity(858);
+pub fn generate_ambiguous_and_fixed_line_masks() -> (Vec<i32>, Vec<i32>) {
+  let mut ambiguous = Vec::with_capacity(858);
+  let mut fixed = Vec::with_capacity(448);
   for i in 0..(3 as i32).pow(11) {
     let mask = ternary_to_encoded_binary(i);
     match consolidate_mask(mask) {
       Ok(consolidation) => {
         if consolidation == 0 {
-          result.push(mask);
+          ambiguous.push(mask);
+        } else if consolidation == -1 {
+          // println!("{}: {}", mask, Line::try_from(mask).unwrap());
+          fixed.push(mask);
         }
       },
       Err(_) => (),
     }
   }
-  result
+  (ambiguous, fixed)
+}
+
+pub fn debug_col_unset_grid(rows: [i32; 6]) {
+  println!("{}", Grid::try_from((rows, [0, 0, 0, 0, 0, 0])).unwrap());
 }
 
 fn ternary_to_encoded_binary(n: i32) -> i32 {
@@ -91,9 +99,28 @@ fn backtrack_line(line: &mut Line, last_colored_idx: i32,
 }
 
 
+#[derive(Debug)]
 struct Grid {
   rows: [Line; 6],
   cols: [Line; 6],
+}
+
+impl Grid {
+
+  fn set_color(&mut self, i: usize, j: usize, color: u8) -> bool {
+    let row = &mut self.rows[i];
+    if row.set_color(j, color) {
+      let col = &mut self.cols[j];
+      if col.set_color(i, color) {
+        return true;
+      } else {
+        row.uncolor(j, color);
+        return false;
+      }
+    }
+    false
+  }
+
 }
 
 impl TryFrom<([i32; 6], [i32; 6])> for Grid {
@@ -176,7 +203,7 @@ impl Display for Grid {
         let color = match (*row).color(j) {
           Line::YELLOW => 'S',
           Line::BLUE => 'M',
-          _ => '.',
+          _ => ' ',
         };
         let sign = match (*row).sign(j) {
           Line::EQUAL => '=',
@@ -188,7 +215,7 @@ impl Display for Grid {
       let last_color = match (*row).color((Line::DIM - 1) as usize) {
         Line::YELLOW => 'S',
         Line::BLUE => 'M',
-        _ => '.',
+        _ => ' ',
       };
       writeln!(f, " {} |", last_color)
     }
@@ -351,21 +378,21 @@ impl Display for Line {
       let color = match self.color(i) {
         Self::YELLOW => 'S',
         Self::BLUE => 'M',
-        _ => '.',
+        _ => ' ',
       };
       let sign = match self.sign(i) {
         Self::EQUAL => '=',
         Self::CROSS => 'x',
         _ => '|',
       };
-      write!(f, "{}{}", color, sign)?;
+      write!(f, "{} {} ", color, sign)?;
     }
 
     // Final color without following sign
     let last_color = match self.color((Self::DIM - 1) as usize) {
       Self::YELLOW => 'S',
       Self::BLUE => 'M',
-      _ => '.',
+      _ => ' ',
     };
     write!(f, "{} }}", last_color)
   }
@@ -440,13 +467,13 @@ mod tests {
   use super::*;
 
   #[test]
-    fn instantiate_blank_lines() {
-      for i in 0..(3 as i32).pow(5) {
-        let line = Line::try_from(ternary_to_encoded_binary(i) << 12)
-            .unwrap();
-        assert_eq!(line.colored_cell_count(), 0);
-      }
+  fn instantiate_blank_lines() {
+    for i in 0..(3 as i32).pow(5) {
+      let line = Line::try_from(ternary_to_encoded_binary(i) << 12)
+          .unwrap();
+      assert_eq!(line.colored_cell_count(), 0);
     }
+  }
 
   #[test]
   fn colorize_sign_free_line() {
@@ -519,16 +546,37 @@ mod tests {
 
   #[test]
   fn generate_ambiguities() {
-    let ambiguities = generate_ambiguous_line_masks();
-    assert_eq!(ambiguities.len(), 858);
+    let ambiguities = generate_ambiguous_and_fixed_line_masks();
+    assert_eq!(ambiguities.0.len(), 858);
+    assert_eq!(ambiguities.1.len(), 448);
   }
 
   #[test]
   fn generate_grid() {
     let grid = Grid::try_from(([1, 1, 2, 0, 0, 0], [1, 0, 0, 0, 0, 0]));
-    println!("{}", grid.unwrap());
+    // println!("{}", grid.unwrap());
     let grid = Grid::try_from(([1, 2, 1, 0, 0, 0], [10, 0, 0, 0, 0, 0]));
-    println!("{}", grid.unwrap());
+    // println!("{}", grid.unwrap());
+  }
+
+  #[test]
+  fn do_not_generate_bad_grid() {
+    let grid = Grid::try_from(([1, 1, 1, 2, 2, 2], [0, 0, 0, 0, 0, 0]));
+    assert_eq!(grid.unwrap_err(), LineError::TooManyConsecutives(0));
+  }
+
+  #[test]
+  fn set_grid() {
+    let mut grid = Grid::try_from(([0, 4096, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0]))
+        .unwrap();
+    assert_eq!(grid.set_color(0, 0, 1), true);
+    assert_eq!(grid.set_color(1, 0, 1), false);
+    assert_eq!(grid.set_color(1, 0, 2), true);
+    assert_eq!(grid.set_color(2, 0, 2), false);
+    assert_eq!(grid.set_color(2, 0, 1), true);
+    assert_eq!(grid.set_color(1, 1, 1), false);
+    assert_eq!(grid.set_color(1, 1, 2), true);
+    println!("{}", grid);
   }
   
 }
