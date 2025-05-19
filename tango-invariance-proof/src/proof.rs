@@ -1,4 +1,4 @@
-use crate::grid::{debug_col_unset_grid, generate_ambiguous_and_fixed_line_masks};
+use crate::grid::{debug_col_unset_grid, generate_categorized_line_masks};
 
 pub fn run_proof() {
   print_prelude();
@@ -38,7 +38,7 @@ fn generate_ambiguous_grids() {
       lines (hereafter 'fixed' lines).");
   println!();
   println!("> Generating all ambiguous lines and filled lines (22 bits per line)...");
-  let temp = generate_ambiguous_and_fixed_line_masks();
+  let temp = generate_categorized_line_masks();
   let ambiguous_masks = temp.0;
   let fixed_masks = temp.1;
   let ambiguous_count = ambiguous_masks.len();

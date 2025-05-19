@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "tango_invariance_proof"
+name = "tango_optimal_solver"
 version = "0.1.0"

@@ -1,8 +1,9 @@
-use std::{fmt::{Debug, Display}, mem::MaybeUninit};
+use std::{collections::HashMap, fmt::{Debug, Display}, mem::MaybeUninit};
 
-pub fn generate_ambiguous_and_fixed_line_masks() -> (Vec<i32>, Vec<i32>) {
+pub fn generate_categorized_line_masks() -> (Vec<i32>, Vec<i32>, HashMap<i32, i32>) {
   let mut ambiguous = Vec::with_capacity(858);
   let mut fixed = Vec::with_capacity(448);
+  let mut progressible = HashMap::with_capacity(22748);
   for i in 0..(3 as i32).pow(11) {
     let mask = ternary_to_encoded_binary(i);
     match consolidate_mask(mask) {
@@ -12,12 +13,14 @@ pub fn generate_ambiguous_and_fixed_line_masks() -> (Vec<i32>, Vec<i32>) {
         } else if consolidation == -1 {
           // println!("{}: {}", mask, Line::try_from(mask).unwrap());
           fixed.push(mask);
+        } else if consolidation > 0 {
+          progressible.insert(mask, consolidation);
         }
       },
       Err(_) => (),
     }
   }
-  (ambiguous, fixed)
+  (ambiguous, fixed, progressible)
 }
 
 pub fn debug_col_unset_grid(rows: [i32; 6]) {
@@ -100,14 +103,14 @@ fn backtrack_line(line: &mut Line, last_colored_idx: i32,
 
 
 #[derive(Debug)]
-struct Grid {
+pub struct Grid {
   rows: [Line; 6],
   cols: [Line; 6],
 }
 
 impl Grid {
 
-  fn set_color(&mut self, i: usize, j: usize, color: u8) -> bool {
+  pub fn set_color(&mut self, i: usize, j: usize, color: u8) -> bool {
     let row = &mut self.rows[i];
     if row.set_color(j, color) {
       let col = &mut self.cols[j];
@@ -435,7 +438,7 @@ impl TryFrom<i32> for Line {
 }
 
 #[derive(Debug, PartialEq)]
-enum LineError {
+pub enum LineError {
   TooManyYellows,
   TooManyBlues,
   TooManyConsecutives(usize),
@@ -545,18 +548,17 @@ mod tests {
   }
 
   #[test]
-  fn generate_ambiguities() {
-    let ambiguities = generate_ambiguous_and_fixed_line_masks();
-    assert_eq!(ambiguities.0.len(), 858);
-    assert_eq!(ambiguities.1.len(), 448);
+  fn generate_categorized_masks() {
+    let categorized = generate_categorized_line_masks();
+    assert_eq!(categorized.0.len(), 858);
+    assert_eq!(categorized.1.len(), 448);
+    assert_eq!(categorized.2.len(), 22748);
   }
 
   #[test]
   fn generate_grid() {
-    let grid = Grid::try_from(([1, 1, 2, 0, 0, 0], [1, 0, 0, 0, 0, 0]));
-    // println!("{}", grid.unwrap());
-    let grid = Grid::try_from(([1, 2, 1, 0, 0, 0], [10, 0, 0, 0, 0, 0]));
-    // println!("{}", grid.unwrap());
+    Grid::try_from(([1, 1, 2, 0, 0, 0], [1, 0, 0, 0, 0, 0])).unwrap();
+    Grid::try_from(([1, 2, 1, 0, 0, 0], [10, 0, 0, 0, 0, 0])).unwrap();
   }
 
   #[test]

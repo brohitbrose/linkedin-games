@@ -1,5 +1,5 @@
 [package]
-name = "tango_invariance_proof"
+name = "tango_optimal_solver"
 version = "0.1.0"
 edition = "2024"
 
