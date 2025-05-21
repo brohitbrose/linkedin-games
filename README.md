@@ -133,33 +133,56 @@ Given that LinkedIn promises the following:
 
 , we implement something more elegant.
 
-#### `consolidateLine()`
+#### Defining Some Assumptions
 
-Though LinkedIn's definition of a "guess" is not formally specified, we'll assume that we have following guarantee:
+LinkedIn's definition of a "guess" is not formally specified.
+Let's ignore that aspect for now and assume that we have following guarantee:
 
-- **Invariant A:** For any provided puzzle with $`N`$ blank cells, there exists a sequence of moves $`[m_1, m_2, ..., m_N]`$ that solves the puzzle where each $`m_i`$ indicates the finalizing of some blank cell; furthermore, we can confidently make each $`m_i`$ at least as early as every $`m_{j>i}`$.
+- **Invariant A:** For any provided puzzle with $`N`$ blank cells, there exists a sequence of moves $`[m_1, m_2, ..., m_N]`$ that solves the puzzle where each $`m_i`$ indicates the finalizing of some blank cell.
+Only one such sequence, ignoring order, exists for a provided puzzle.
 
-This at least gets us started toward a guess-free algorithm: iterate over every blank cell, check if we can confidently mark it, do so if we can, and repeat until no blank cells remain.
+This at least gets us started toward an algorithm: iterate over every blank cell, check if we can confidently mark it without "guessing" (again, let's not yet worry about what exactly that means), do so if we can, and repeat until no blank cells remain.
 But this strategy wastes work; in the early stages of solving a puzzle, most blank cells cannot be marked, and we're checking all of them.
-Furthermore, it's rather unbounded as to what exactly the "check if we can confidently mark a blank cell" step entails.
 
-It's hard to proceed any further from here without additional assumptions.\*
+It's hard to proceed any further from here without additional assumptions.
+Let's assume we're allowed to work with a stronger asssumption:
 However, official Tango puzzles seem to always have a stronger guarantee than the one we mentioned:
 
-- **Invariant B:** In addition to Invariant A holding true, every $`m_i`$ can be made at the appropriate time by simply considering either the row or the column that contains it.
+- **Invariant B:** In addition to Invariant A holding true, at every step toward a solution, some $`m_i`$ by simply considering either the row or the column that contains it.
 
-_\* Invariant B may always be provably true given Invariant A._
-_If this is the case, then Invariant B is just a logical conclusion, not an additional assumption._
+_Invariant A does not imply Invariant B_; Invariant B is inherently a separate, stronger assumption.
+Disproving the implication can be accomplished by identifying any partial grid with exactly one solution where no level of "single row" or "single column" reasoning can determine any cell.
+Consider the following grid:
 
-_Unfortunately, I lack the mathematical finesse to prove (or disprove) this relationship myself._
-_A programmable strategy (albeit an extremely slow one) could be the following:_
-- _Let G be a non-contradictory grid that exclusively contains lines such that no moves can be deduced from any one line at a time._
-- _Demonstrate that every possible G has multiple solutions._
+```
+    1   2   3   4   5   6
+  -------------------------
+1 |   | S | M | S |   |   |
+  | - + - + - + - + - + - |
+2 |   |   |   | M |   | S |
+  | - + - + - + - + - + - |
+3 | S | M | S |   |   | M |
+  | - + - + - + - + - + - |
+4 | M | S | M | S | S | M |
+  | - + - + - + - + - + - |
+5 | M |   | S |   | M | S |
+  | - + - + - + - + - + - |
+6 | S |   |   | M |   | S |
+  -------------------------
+```
 
-_We welcome any takers to answering this question!_
-_Please let us know what you learn._
+When we look at any row or column ("line") in isolation, there are enough possible solutions to the line where no individual cell will definitely have a known value.
+But if we mark row 5 column 2 as a Sun, then: `R5C2=S` ⇒ `R6C2=M` ⇒ `R2C2=M` ⇒ `R2C3=S` ⇒ `R6C3=M`.
+This leads to three consecutive moons in Row 6 (columns 2–4), which is a contradiction.
+Therefore `R5C2` must have been a Moon all along.
+From here, the remainder of the puzzle becomes solvable by performing line-isolated reasoning (and therefore has one solution).
 
-If we assume that Invariant B is true, a far more practical strategy becomes possible.
+This example puzzle is uniquely solvable (satisfying Invariant A), even though it requires reasoning beyond looking at individual lines (contradicting Invariant B).
+However, note that there is _no logical way_ to solve the puzzle without making a hypothesis about the color of some cell and seeing whether it eventually leads to a global inconsistency.
+That sounds an awful lot like a "guess".
+
+We thus choose to believe that Invariant B is what LinkedIn means when it promises that every Tango puzzle can be solved without guesswork.
+In doing so, a far more satisfying strategy than backtracking becomes feasible.
 
 **Observation:** If we treat all "lines" (rows and columns) in a vacuum, a blank cell in a line can be deduced _only if_ there is at least one other cell in the line.
 
@@ -205,7 +228,7 @@ By exploiting symmetry and operating on bits, we could very easily bring the siz
 That's pretty small in some environments, but large enough to be suspicious for a simple browser extension that strives to be lightweight.
 
 We don't necessarily have to throw everything away, however.
-It turns out that there are only `1306` line combinations that both could eventually hope to bring about any solution, yet are completely _inconclusive_ in their current state.
+It turns out that there are only `858` line combinations that both could eventually hope to bring about any solution, yet are completely _inconclusive_ in their current state.
 A table seeded with these values could supplement our current algorithm to completely prevent enqueuing lines from which we're currently going to learn nothing.
 We have chosen not to implement this since the check happens rather quickly anyway, but it does add a noteworthy elegance.
 
