@@ -126,7 +126,7 @@ There are only two noteworthy mentions here:
 
 <details><summary>(Expand for overview [warning: long!])</summary>
 
-Backtracking trivially solves Tango, too&mdash;but brute-forcing isn't very satisfying, and we've already done it twice.
+While backtracking trivially solves Tango, brute-force solutions are unsatisfying—and we've already applied them to two other puzzles.
 Given that LinkedIn promises the following:
 
 - Each puzzle has **one right answer** and can be solved via deduction (you should **never have to make a guess**)
@@ -136,10 +136,10 @@ Given that LinkedIn promises the following:
 #### Defining Some Assumptions
 
 LinkedIn's definition of a "guess" is not formally specified.
-Let's ignore that aspect for now and assume that we have following guarantee:
+We'll ignore that ambiguity for now and proceed with the following guarantee:
 
 - **Invariant A:** For any provided puzzle with $`N`$ blank cells, there exists a sequence of moves $`[m_1, m_2, ..., m_N]`$ that solves the puzzle where each $`m_i`$ indicates the finalizing of some blank cell.
-Only one such sequence, ignoring order, exists for a provided puzzle.
+Exactly one such sequence (ignoring order) exists for a provided puzzle.
 
 This at least gets us started toward an algorithm: iterate over every blank cell, check if we can confidently mark it without "guessing" (again, let's not yet worry about what exactly that means), do so if we can, and repeat until no blank cells remain.
 But this strategy wastes work; in the early stages of solving a puzzle, most blank cells cannot be marked, and we're checking all of them.
@@ -149,7 +149,7 @@ Let's assume something stronger:
 
 - **Invariant B:** In addition to Invariant A holding true, at every step toward a solution, some $`m_i`$ may be finalized by simply considering either the row or the column that contains it.
 
-_Invariant A does not imply Invariant B_; Invariant B is inherently a separate, more aggressive assumption.
+_Invariant A does not imply Invariant B_; the latter is a stronger and independent assumption.
 Disproving the implication can be accomplished by identifying any partial grid with exactly one solution where no level of "single row" or "single column" reasoning can determine any cell.
 Consider the following grid:
 
@@ -178,21 +178,21 @@ From here, the remainder of the puzzle becomes solvable by performing line-isola
 
 This example puzzle is uniquely solvable (satisfying Invariant A), even though it requires reasoning beyond looking at individual lines (contradicting Invariant B).
 However, note that there is _no logical way_ to solve the puzzle without making a hypothesis about the color of some cell and seeing whether it eventually leads to a global inconsistency.
-That sounds an awful lot like a "guess".
+That sounds like a "guess".
 
 We thus choose to believe that Invariant B is what LinkedIn means when it promises that every Tango puzzle can be solved without guesswork.
 In doing so, a far more satisfying strategy than backtracking becomes feasible.
 
-**Observation:** If we treat all "lines" (rows and columns) in a vacuum, a blank cell in a line can be deduced _only if_ there is at least one other cell in the line.
+**Observation:** If we treat all "lines" (rows and columns) in a vacuum, a blank cell in a line can be deduced _only if_ there's at least one marked cell elsewhere in the line.
 
-This can be proven via contradiction: a line must have exactly one solution; if a line is blank, then both the intended solution and its complement (i.e. flip every Sun/Moon) will satisfy any equality/inequality constraints and the "no-triply-consecutive" requirement.
+This can be proven via contradiction: a line must have exactly one solution; if a line is blank, then both the intended solution and its complement (i.e. flip every Sun/Moon) will satisfy any line-imposed rules.
 
 **Observation:** If a cell isn't currently solvable, then it definitely remains unsolvable unless either its containing row or its containing column receives an update.
 
 #### Strategic Algorithm
 
 Let's assume that we have a `consolidateLine(line)` method that accepts a line; it marks every cell that can confidently be marked (including cells that can be marked given previous marks made in `consolidateLine`), and it returns the changelist of cells.
-The following algorithm provably solves an Invariant B type Tango grid while limiting the number of explored blank cells to only reasonable candidates (note: false positives are still very much possible):
+The following algorithm provably solves any Invariant B–type Tango grid while limiting exploration to blank cells that are reasonable mark candidates:
 
 ```
 lineQueue := [] # duplicate-free queue
@@ -227,7 +227,7 @@ By exploiting symmetry and operating on bits, we could very easily bring the siz
 That's pretty small in some environments, but large enough to be suspicious for a simple browser extension that strives to be lightweight.
 
 We don't necessarily have to throw everything away, however.
-It turns out that there are only `858` line combinations that both could eventually hope to bring about any solution, yet are completely _inconclusive_ in their current state.
+It turns out that there are only `858` line combinations that both could eventually hope to bring about any solution yet yield no immediate deductions.
 A table seeded with these values could supplement our current algorithm to completely prevent enqueuing lines from which we're currently going to learn nothing.
 We have chosen not to implement this since the check happens rather quickly anyway, but it does add a noteworthy elegance.
 
