@@ -147,7 +147,7 @@ But this strategy wastes work; in the early stages of solving a puzzle, most bla
 It's hard to proceed any further from here without additional assumptions.
 Let's assume something stronger:
 
-- **Invariant B:** In addition to Invariant A holding true, at every step toward a solution, some $`m_i`$ by simply considering either the row or the column that contains it.
+- **Invariant B:** In addition to Invariant A holding true, at every step toward a solution, some $`m_i`$ may be finalized by simply considering either the row or the column that contains it.
 
 _Invariant A does not imply Invariant B_; Invariant B is inherently a separate, more aggressive assumption.
 Disproving the implication can be accomplished by identifying any partial grid with exactly one solution where no level of "single row" or "single column" reasoning can determine any cell.
