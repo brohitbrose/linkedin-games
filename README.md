@@ -145,12 +145,11 @@ This at least gets us started toward an algorithm: iterate over every blank cell
 But this strategy wastes work; in the early stages of solving a puzzle, most blank cells cannot be marked, and we're checking all of them.
 
 It's hard to proceed any further from here without additional assumptions.
-Let's assume we're allowed to work with a stronger asssumption:
-However, official Tango puzzles seem to always have a stronger guarantee than the one we mentioned:
+Let's assume something stronger:
 
 - **Invariant B:** In addition to Invariant A holding true, at every step toward a solution, some $`m_i`$ by simply considering either the row or the column that contains it.
 
-_Invariant A does not imply Invariant B_; Invariant B is inherently a separate, stronger assumption.
+_Invariant A does not imply Invariant B_; Invariant B is inherently a separate, more aggressive assumption.
 Disproving the implication can be accomplished by identifying any partial grid with exactly one solution where no level of "single row" or "single column" reasoning can determine any cell.
 Consider the following grid:
 
