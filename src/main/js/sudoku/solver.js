@@ -103,7 +103,8 @@ export class SudokuGrid {
     while (pos < this.#n) {
       if ((mask & 1) === 0) {
         const val = pos + 1;
-        this.mark(idx, val);
+        const filter = 1 << pos;
+        this.#doMark(idx, col, row, reg, val, filter);
         result.push({idx: idx, val: val});
         const shortCircuit = this.#backtrack(maxDepth, curDepth + 1, sequence, result);
         this.unmark(idx);
@@ -174,6 +175,10 @@ export class SudokuGrid {
     if ((this.#regMasks[reg] & filter) !== 0) {
       throw new Error('Value ' + val + ' already present in region ' + reg);
     }
+    this.#doMark(idx, col, row, reg, val, filter);
+  }
+
+  #doMark(idx, col, row, reg, val, filter) {
     this.#values[idx] = val;
     this.#colMasks[col] |= filter;
     this.#rowMasks[row] |= filter;
