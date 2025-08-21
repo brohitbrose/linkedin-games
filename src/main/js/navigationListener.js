@@ -6,6 +6,9 @@ const gameScriptMap = {
   '/games/queens': 'queens.js',
   '/games/zip': 'zip.js',
   '/games/tango': 'tango.js',
+  '/games/sudoku': 'sudoku.js',
+  '/games/mini-sudoku': 'sudoku.js',
+  '/games/minisudoku': 'sudoku.js',
 };
 
 polyfilledBrowser.webNavigation.onHistoryStateUpdated

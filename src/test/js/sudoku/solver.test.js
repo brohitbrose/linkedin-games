@@ -60,8 +60,6 @@ test('SudokuGrid.solve() generates the correct solution', () => {
   grid.mark(34, 6);
   grid.mark(35, 3);
 
-  console.error(grid.solve());
-
   const grid2 = new SudokuGrid(6, 3, 2);
   // 2025/08/21 puzzle
   grid2.mark(1, 1);
@@ -74,6 +72,4 @@ test('SudokuGrid.solve() generates the correct solution', () => {
   grid2.mark(28, 4);
   grid2.mark(33, 2);
   grid2.mark(35, 5);
-
-  console.error(grid2.solve());
 });
