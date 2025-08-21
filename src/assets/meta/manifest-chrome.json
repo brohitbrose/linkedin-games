@@ -23,6 +23,10 @@
     {
       "matches": ["*://*.linkedin.com/games/tango*"],
       "js": ["tango.js"]
+    },
+    {
+      "matches": ["*://*.linkedin.com/games/*sudo*"],
+      "js": ["sudoku.js"]
     }
   ],
   "icons": {
