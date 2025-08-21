@@ -1,4 +1,4 @@
-import { doOneClick, getGridDiv } from '../util.js';
+import { doOneClick, doOneMouseCycle, getGridDiv } from '../util.js';
 import { SudokuGrid } from './solver.js';
 
 export function autoSolve() {
@@ -165,7 +165,7 @@ class SudokuDomApiV0 extends SudokuDomApi {
 
   clearAnnoyingPopup(popupDiv) {
     const button = popupDiv.querySelector('button[aria-label*="close" i]');
-    doOneMouseCycle(this.orElseThrow(button, 'clearAnnoyingPopup',
+    doOneClick(this.orElseThrow(button, 'clearAnnoyingPopup',
         'Could not extract hint popup close button'));
   }
 
