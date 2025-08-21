@@ -31,6 +31,7 @@ const sharedOutputFiles = [
   'queens.js',
   'zip.js',
   'tango.js',
+  'sudoku.js',
   // Background scripts
   'navigationListener.js',
 ];
@@ -40,6 +41,7 @@ const scriptsToBuild = [
   { entry: 'src/main/js/queens/queens.js', out: `${distDir}/queens.js` },
   { entry: 'src/main/js/zip/zip.js', out: `${distDir}/zip.js` },
   { entry: 'src/main/js/tango/tango.js', out: `${distDir}/tango.js` },
+  { entry: 'src/main/js/sudoku/sudoku.js', out: `${distDir}/sudoku.js` },
   // Background script
   {
     entry: 'src/main/js/navigationListener.js',

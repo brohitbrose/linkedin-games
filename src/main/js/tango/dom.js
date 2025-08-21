@@ -1,4 +1,4 @@
-import { doOneClick, getGridDiv } from '../util.js';
+import { doOneMouseCycle, getGridDiv } from '../util.js';
 import { learnMarkStrategy } from './markStrategy.js';
 import { solveTango } from './solver.js';
 
@@ -97,7 +97,7 @@ class TangoDomApi {
       const target = mark.color;
       for (let i = markStrategy.getCellDivMark(cell, markExtractor);
           i !== target; i = (i + 1) % 3) {
-        doOneClick(cell);
+        doOneMouseCycle(cell);
       }
     }
   }

@@ -43,7 +43,7 @@ class SudokuDomApi {
       const idx = this.getCellDivIdx(cellDiv);
       cellDivs[idx] = cellDiv;
       const lockedContent = this.getLockedContent(cellDiv);
-      if (lockedContent !== 0) {
+      if (lockedContent > 0) {
         sudokuGrid.mark(idx, lockedContent);
       }
     }
@@ -65,7 +65,9 @@ class SudokuDomApi {
   }
 
   #clickCells(cellDivs, numberDivs, solution) {
-    for (const [idx, val] of solution) {
+    for (const packed of solution) {
+      const idx = packed.idx;
+      const val = packed.val;
       doOneClick(cellDivs[idx]);
       doOneClick(numberDivs[val - 1]);
     }
@@ -73,7 +75,7 @@ class SudokuDomApi {
 
 }
 
-class SudokuDomApiV0 {
+class SudokuDomApiV0 extends SudokuDomApi {
 
   getSudokuGridDiv() {
     return this.orElseThrow(
@@ -108,9 +110,25 @@ class SudokuDomApiV0 {
         `Failed to parse an integer data cell ID from ${dataCellIdx}`));
   }
 
+  getLockedContent(cellDiv) {
+    if (this.cellDivIsLocked(cellDiv)) {
+      const content = cellDiv.querySelector('.sudoku-cell-content');
+      if (content && content.textContent) {
+        const parsed = parseInt(content.textContent);
+        return this.orElseThrow(Number.isNaN(parsed) ? null : parsed,
+            'getLockedContent', `Expected number, found ${content.textContent}`);
+      }
+    }
+    return -1;
+  }
+
+  cellDivIsLocked(cellDiv) {
+    return cellDiv.classList.contains('sudoku-cell-prefilled');
+  }
+
   getNumberDivs() {
     const wrapper = this.orElseThrow(
-        getGridDiv(d => d.querySelector('sudoku-input-buttons__numbers')),
+        getGridDiv(d => d.querySelector('.sudoku-input-buttons__numbers')),
         'getNumberDivs', 'SudokuNumberDiv selector yielded nothing');
     const result = new Array(6).fill(null);
     for (let i = 0; i < 6; i++) {
@@ -135,7 +153,7 @@ class SudokuDomApiV0 {
     if ('on' === text) {
       const toggle = this.orElseThrow(notesDiv.querySelector('div[aria-label*="notes" i]'),
           'disableNotes', 'NotesToggle selector yielded nothing');
-      doOneClick(toggle);
+      doOneMouseCycle(toggle);
     }
   }
 
@@ -147,12 +165,8 @@ class SudokuDomApiV0 {
 
   clearAnnoyingPopup(popupDiv) {
     const button = popupDiv.querySelector('button[aria-label*="close" i]');
-    doOneClick(this.orElseThrow(button, 'clearAnnoyingPopup',
+    doOneMouseCycle(this.orElseThrow(button, 'clearAnnoyingPopup',
         'Could not extract hint popup close button'));
-  }
-
-  cellDivIsLocked(cellDiv) {
-    return cellDiv.classList.contains('sudoku-cell-prefilled');
   }
 
   orElseThrow(result, fname, cause) {

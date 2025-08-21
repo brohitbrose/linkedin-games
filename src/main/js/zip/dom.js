@@ -1,4 +1,4 @@
-import { doOneClick, getGridDiv } from '../util.js';
+import { doOneMouseCycle, getGridDiv } from '../util.js';
 import { solveZip } from './solver.js';
 
 export function autoSolve() {
@@ -62,7 +62,7 @@ class ZipDomApi {
   #clickCells(clickTargets, cellSequence) {
     for (const loc of cellSequence) {
       const clickTarget = clickTargets[loc];
-      doOneClick(clickTarget);
+      doOneMouseCycle(clickTarget);
     }
   }
 
