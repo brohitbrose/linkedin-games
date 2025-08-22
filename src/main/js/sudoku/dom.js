@@ -1,4 +1,4 @@
-import { doOneClick, doOneMouseCycle, getGridDiv } from '../util.js';
+import { doOneClick, getGridDiv } from '../util.js';
 import { SudokuGrid } from './solver.js';
 
 export function autoSolve() {
@@ -22,12 +22,12 @@ export function autoSolve() {
 class SudokuDomApi {
 
   autoSolve() {
+    const gameBoardDiv = this.getGameBoardDiv();
     const gridDiv = this.getSudokuGridDiv();
     const numberDivs = this.getNumberDivs();
     const [cellDivs, sudokuGrid] = this.#transformSudokuGridDiv(gridDiv);
     const solution = sudokuGrid.solve();
-    this.useSolveMode(); // As late as we can to reduce popup interference odds
-    this.#clickCells(cellDivs, numberDivs, solution);
+    this.doSolve(gameBoardDiv, cellDivs, numberDivs, solution);
   }
 
   #transformSudokuGridDiv(gridDiv) {
@@ -50,18 +50,49 @@ class SudokuDomApi {
     return [cellDivs, sudokuGrid];
   }
 
-  useSolveMode() {
+  doSolve(gameBoardDiv, cellDivs, numberDivs, solution) {
     // First, attempt to grab the "Notes" on/off switch.
-    let notesDiv;
+    let syncNotesDiv;
     try {
-      notesDiv = this.getNotesDiv();
+      syncNotesDiv = this.getNotesDiv();
     } catch (e) {
       // If it isn't present, retry after clearing any "Use a hint" popovers.
       const annoyingPopup = this.getAnnoyingPopupDiv();
+
+      let timeoutRef;
+      // Define the observer callback.
+      const observerCallback = (mutations, observer) => {
+        for (const mutation of mutations) {
+          if (this.mutationCreatesNotesToggle(mutation)) {
+            clearTimeout(timeoutRef);
+            observer.disconnect();
+            const notesDiv = this.getNotesDiv();
+            this.disableNotes(notesDiv);
+            this.#clickCells(cellDivs, numberDivs, solution);
+            return;
+          }
+        }
+      }
+      // Bind callback to observer.
+      const observer = new MutationObserver(observerCallback);
+      timeoutRef = setTimeout(() => {
+        observer.disconnect();
+        console.error('Timed out awaiting Notes toggle mutation');
+      }, 10000);
+      observer.observe(gameBoardDiv, {
+        attributes: true,
+        attributeFilter: ['class'],
+        subtree: true,
+        childList: true
+      });
+
+      // Trigger potential mutations.
       this.clearAnnoyingPopup(annoyingPopup);
-      notesDiv = this.getNotesDiv(); // May throw
     }
-    this.disableNotes(notesDiv);
+    if (syncNotesDiv) {
+      this.disableNotes(syncNotesDiv);
+      this.#clickCells(cellDivs, numberDivs, solution);
+    }
   }
 
   #clickCells(cellDivs, numberDivs, solution) {
@@ -76,6 +107,12 @@ class SudokuDomApi {
 }
 
 class SudokuDomApiV0 extends SudokuDomApi {
+
+  getGameBoardDiv() {
+    return this.orElseThrow(
+        getGridDiv(d => d.querySelector('.game-board.grid-board-wrapper')),
+        'getGameBoardDiv', 'SudokuGameBoardDiv selector yielded nothing');
+  }
 
   getSudokuGridDiv() {
     return this.orElseThrow(
@@ -139,6 +176,10 @@ class SudokuDomApiV0 extends SudokuDomApi {
     return result;
   }
 
+  mutationCreatesNotesToggle(mutation) {
+    return mutation.target.classList.contains('sudoku-under-board-controls-container');
+  }
+
   getNotesDiv() {
     return this.orElseThrow(
         getGridDiv(d => d.querySelector('.sudoku-under-board-controls-container')),
@@ -153,7 +194,7 @@ class SudokuDomApiV0 extends SudokuDomApi {
     if ('on' === text) {
       const toggle = this.orElseThrow(notesDiv.querySelector('div[aria-label*="notes" i]'),
           'disableNotes', 'NotesToggle selector yielded nothing');
-      doOneMouseCycle(toggle);
+      doOneClick(toggle);
     }
   }
 
