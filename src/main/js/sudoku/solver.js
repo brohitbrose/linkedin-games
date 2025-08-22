@@ -5,23 +5,22 @@ export class SudokuGrid {
   #n;
   /** The number of cells in this grid. */
   #n2;
-  /** */
+  /** The width of each of this grid's regions, in cells. */
   #regionWidth;
-  /**  */
+  /** The height of each of this grid's regions, in cells. */
   #regionHeight;
-  /**  */
+  /** The number of regions per in this grid. */
   #regionsPerRow;
-  /**  */
+  /** The number of regions per column in this grid. */
   #regionsPerCol;
-  /**  */
+  /** The numbers marked so far in this grid, with 0 indicating empty. */
   #values;
-  /**  */
+  /** The count of nonempty cells in grid. */
   #markCount;
-  /**  */
+
+  /** TODO: document how these work. */
   #rowMasks;
-  /**  */
   #colMasks;
-  /**  */
   #regMasks;
 
   constructor(n, regionWidth, regionHeight) {
