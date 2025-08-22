@@ -1,4 +1,4 @@
-import { doOneClick, getGridDiv } from '../util.js';
+import { doOneMouseCycle, getGridDiv } from '../util.js';
 import { solveQueens } from './solver.js';
 
 export function autoSolve() {
@@ -62,7 +62,7 @@ class QueensDomApi {
     for (const loc of queenLocations) {
       const existingMark = existingMarks.get(loc) ?? 0, cellDiv = cellDivs[loc];
       for (let i = existingMark; i < 2; i++) {
-        doOneClick(cellDiv);
+        doOneMouseCycle(cellDiv);
       }
       if (existingMark === 2) {
         existingMarks.delete(loc);
@@ -73,7 +73,7 @@ class QueensDomApi {
     // "Auto-x" mode is on.
     for (const [key, value] of existingMarks) {
       if (value === 2) {
-        doOneClick(cellDivs[key]);
+        doOneMouseCycle(cellDivs[key]);
       }
     }
   }

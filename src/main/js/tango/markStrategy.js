@@ -1,4 +1,4 @@
-import { doOneClick } from '../util.js';
+import { doOneMouseCycle } from '../util.js';
 
 // Learns how cells identify suns and moons by clicking a blank cell three times
 // (blank -> sun, sun -> moon, moon -> blank). Currently, the following are
@@ -44,7 +44,7 @@ export function learnMarkStrategy(cellDivs, doCellDivIsLocked,
     });
 
     // Kickoff!
-    doOneClick(blankCell);
+    doOneMouseCycle(blankCell);
 
     function observerCallback(mutations, observer) {
       // Bound the number of times we click the div, even if we learned nothing.
@@ -67,7 +67,7 @@ export function learnMarkStrategy(cellDivs, doCellDivIsLocked,
         for (const node of mutation.addedNodes) {
           tryProcessNode(node);
           // Don't resolve yet! Notice how in tryProcessNode, we trigger another
-          // mutation via doOneClick just before updating strategy. Ensure that
+          // mutation (via mouse) just before updating strategy. Ensure that
           // this mutation takes place prior to resolving by invoking resolve()
           // in the next callback iteration instead.
           if (strategy) {
@@ -83,11 +83,11 @@ export function learnMarkStrategy(cellDivs, doCellDivIsLocked,
             if (!yellowUrl) {
               yellowUrl = src;
               // Hopefully trigger yellow -> blue.
-              doOneClick(blankCell);
+              doOneMouseCycle(blankCell);
             } else if (src !== yellowUrl) {
               blueUrl = src;
               // Hopefully trigger blue -> blank.
-              doOneClick(blankCell);
+              doOneMouseCycle(blankCell);
               strategy = new ImgSrcStrategy(yellowUrl, blueUrl);
             }
           }
@@ -99,11 +99,11 @@ export function learnMarkStrategy(cellDivs, doCellDivIsLocked,
             if (!yellowTitle) {
               yellowTitle = title;
               // Hopefully trigger yellow -> blue.
-              doOneClick(blankCell);
+              doOneMouseCycle(blankCell);
             } else if (title !== yellowTitle) {
               blueTitle = title;
               // Hopefully trigger blue -> blank.
-              doOneClick(blankCell);
+              doOneMouseCycle(blankCell);
               strategy = new SvgTitleStrategy(yellowTitle, blueTitle);
             }
           }
@@ -149,7 +149,7 @@ function getBlankCell(cellDivs, doCellDivIsLocked, doCellDivIsBlank) {
       subtree: true,
       childList: true
     });
-    doOneClick(blankableCellDiv);
+    doOneMouseCycle(blankableCellDiv);
 
     function observerCallback(mutations, observer) {
       if (++callCount >= 30) {
@@ -164,7 +164,7 @@ function getBlankCell(cellDivs, doCellDivIsLocked, doCellDivIsBlank) {
           return resolve(blankableCellDiv);
         }
       }
-      doOneClick(blankableCellDiv);
+      doOneMouseCycle(blankableCellDiv);
     }
 
   });

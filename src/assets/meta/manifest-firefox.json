@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Games Solver",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Solvers for the daily LinkedIn puzzle games",
   "background": {
     "scripts": ["navigationListener.js"]
@@ -23,6 +23,10 @@
     {
       "matches": ["*://*.linkedin.com/games/tango*"],
       "js": ["tango.js"]
+    },
+    {
+      "matches": ["*://*.linkedin.com/games/*sudo*"],
+      "js": ["sudoku.js"]
     }
   ],
   "icons": {
