@@ -26,25 +26,25 @@ export class SudokuGrid {
 
   constructor(n, regionWidth, regionHeight) {
     if (n < 0 || n > 31) {
-      throw new Error('fixme');
+      throw new Error('Invalid Sudoku dimension size ' + n);
     }
     this.#n = n;
     this.#n2 = n * n;
 
     if (n % regionWidth !== 0) {
-      throw new Error('fixme 2');
+      throw new Error('regionWidth ' + regionWidth + ' does not evenly divide dimension ' + n);
     }
     this.#regionWidth = regionWidth;
     this.#regionsPerCol = n / regionWidth;
 
     if (n % regionHeight !== 0) {
-      throw new Error('fixme 3');
+      throw new Error('regionHeight ' + regionHeight + ' does not evenly divide dimension ' + n);
     }
     this.#regionHeight = regionHeight;
     this.#regionsPerRow = n / regionHeight;
 
     if (this.#regionsPerRow * this.#regionsPerCol !== n) {
-      throw new Error('fixme 4');
+      throw new Error('Region count must be ' + n + ', provided ' + (this.#regionsPerRow * this.#regionsPerCol));
     }
     this.#values = new Array(this.#n2).fill(0);
     this.#markCount = 0;
