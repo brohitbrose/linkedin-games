@@ -2,7 +2,7 @@ import { doOneMouseCycle, getGridDiv } from '../util.js';
 import { solveZip } from './solver.js';
 
 export function autoSolve() {
-  const prioritizedApis = [new ZipDomApiV0()];
+  const prioritizedApis = [new ZipDomApiV1(), new ZipDomApiV0()];
   for (let i = 0; i < prioritizedApis.length; ) {
     const api = prioritizedApis[i];
     try {
@@ -126,6 +126,74 @@ class ZipDomApiV0 extends ZipDomApi {
       return result;
     }
     throw new Error(`${fname} failed using ZipDomApiV0: ${cause}`);
+  }
+
+}
+
+class ZipDomApiV1 extends ZipDomApi {
+
+  getZipGridDiv() {
+    return this.orElseThrow(
+        getGridDiv(d => d.querySelector('[data-testid="interactive-grid"]')),
+        'getZipGridDiv', 'ZipGridDiv selector yielded nothing');
+  }
+
+  getRowsFromGridDiv(gridDiv) {
+    return this.getColsFromGridDiv(gridDiv);
+  }
+
+  getColsFromGridDiv(gridDiv) {
+    const candidates = Object.fromEntries(
+      Array.from(gridDiv.style)
+        .filter(p => p.startsWith("--") && /^\d+$/.test(gridDiv.style.getPropertyValue(p).trim()))
+        .map(p => [p, parseInt(gridDiv.style.getPropertyValue(p))])
+    );
+    const candidateCount = Object.keys(candidates).length;
+    if (candidateCount === 0) {
+      orElseThrow(null, 'getDimensionFromGridDiv', 'No appropriate dimension in gridDiv');
+    } else if (candidateCount > 1) {
+      console.warn('Multiple dimension candidates found in style; dump:', candidates);
+    }
+    const elem = candidates[Object.keys(candidates)[0]];
+    return parseInt(elem);
+  }
+
+  gridDivChildIsCellDiv(gridDivChild) {
+    return gridDivChild.attributes?.getNamedItem('data-cell-idx');
+  }
+
+  getCellDivIdx(cellDiv) {
+    const dataCellIdx = cellDiv.attributes
+        ?.getNamedItem('data-cell-idx')?.value;
+    return parseInt(this.orElseThrow(dataCellIdx, 'getIdFromCellDiv',
+        `Failed to parse an integer data cell ID from ${dataCellIdx}`));
+  }
+
+  getCellDivContent(cellDiv) {
+    const subCellDiv = cellDiv.querySelector('[data-cell-content="true"]');
+    if (subCellDiv) {
+      const parsed = parseInt(subCellDiv.textContent);
+      return this.orElseThrow(Number.isNaN(parsed) ? null : parsed,
+          'getCellDivContent', `Expected number, found ${subCellDiv.textContent}`);
+    }
+    return -1;
+  }
+
+  cellDivHasDownWall(cellDiv) {
+    console.warn('V1#cellDivHasDownWall not yet implemented');
+    return false;
+  }
+
+  cellDivHasRightWall(cellDiv) {
+    console.warn('V1#cellDivHasRightWall not yet implemented');
+    return false;
+  }
+
+  orElseThrow(result, fname, cause) {
+    if (result != null) {
+      return result;
+    }
+    throw new Error(`${fname} failed using ZipDomApiV1: ${cause}`);
   }
 
 }
