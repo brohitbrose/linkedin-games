@@ -158,13 +158,14 @@ class ZipDomApiV1 extends ZipDomApi {
     throw new Error(`${fname} failed using ZipDomApiV1: ${cause}`);
   }
 
+  // Dispatching clicks blindly is inconsistent in dom V1.
   async clickCellsWithFeedback(cellDivs, clickSequence) {
     for (const loc of clickSequence) {
       await anticipateOneMutation(cellDivs[loc], loc);
     }
 
     function anticipateOneMutation(cellDiv, loc) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         // Timeout-based cleanup (in case no mutations are observed)
         let timeoutRef = setTimeout(() => {
           observer.disconnect();
