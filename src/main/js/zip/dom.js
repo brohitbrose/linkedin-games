@@ -59,11 +59,10 @@ class ZipDomApi {
   // Synchronously dispatches the computed click events one by one. In-progress
   // puzzles are automatically reset by the click sequence unlike with the other
   // games, so there's no extra check to do here.
-  async clickCells(clickTargets, cellSequence) {
+  clickCells(clickTargets, cellSequence) {
     for (const loc of cellSequence) {
       const clickTarget = clickTargets[loc];
       doOneMouseCycle(clickTarget);
-      await new Promise(resolve => { setTimeout(() => resolve()) }, 200);
     }
   }
 
@@ -77,7 +76,7 @@ class ZipDomApiV1 extends ZipDomApi {
     const cellSequence = compressSequence(this.getSolution());
     const gridDiv = this.getZipGridDiv();
     const cellDivs = this.transformZipGridDiv(gridDiv)[0];
-    this.clickCells(cellDivs, cellSequence);
+    this.clickCellsWithFeedback(cellDivs, cellSequence);
   }
 
   getSolution() {
@@ -142,10 +141,12 @@ class ZipDomApiV1 extends ZipDomApi {
     return -1;
   }
 
+  // TODO: refactor (unused in V1)
   cellDivHasDownWall(cellDiv) {
     return false;
   }
 
+  // TODO: refactor (unused in V1)
   cellDivHasRightWall(cellDiv) {
     return false;
   }
@@ -155,6 +156,33 @@ class ZipDomApiV1 extends ZipDomApi {
       return result;
     }
     throw new Error(`${fname} failed using ZipDomApiV1: ${cause}`);
+  }
+
+  async clickCellsWithFeedback(cellDivs, clickSequence) {
+    for (const loc of clickSequence) {
+      await anticipateOneMutation(cellDivs[loc], loc);
+    }
+
+    function anticipateOneMutation(cellDiv, loc) {
+      return new Promise((resolve) => {
+        // Timeout-based cleanup (in case no mutations are observed)
+        let timeoutRef = setTimeout(() => {
+          observer.disconnect();
+          console.error('Timed out anticipating mutation on', cellDiv);
+          return reject(new Error('Timed out trying to clear cell ' + loc));
+        }, 10000);
+        // Clean up (including aforementioned timeout) if mutation is observed
+        const observer = new MutationObserver(() => {
+          clearTimeout(timeoutRef);
+          observer.disconnect();
+          return resolve();
+        });
+        // Register the observer
+        observer.observe(cellDiv, { attributes: true, childList: true, subtree: true });
+        // Kickoff!
+        doOneMouseCycle(cellDiv);
+      });
+    }
   }
 
 }
