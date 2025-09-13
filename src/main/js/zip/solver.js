@@ -8,7 +8,7 @@ export function solveZip(m, n, numberedCells, downWalls, rightWalls) {
  * Returns only the elements of the cell visit sequence that are final elements
  * of same-direction runs.
  */
-function compressSequence(sequence) {
+export function compressSequence(sequence) {
   const result = [];
   if (sequence.length === 0) {
     return result;
