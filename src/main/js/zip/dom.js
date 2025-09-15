@@ -1,8 +1,8 @@
 import { doOneMouseCycle, getGridDiv } from '../util.js';
-import { solveZip } from './solver.js';
+import { solveZip, compressSequence } from './solver.js';
 
 export function autoSolve() {
-  const prioritizedApis = [new ZipDomApiV0()];
+  const prioritizedApis = [new ZipDomApiV1(), new ZipDomApiV0()];
   for (let i = 0; i < prioritizedApis.length; ) {
     const api = prioritizedApis[i];
     try {
@@ -23,12 +23,12 @@ class ZipDomApi {
 
   autoSolve() {
     const gridDiv = this.getZipGridDiv();
-    const [cellDivs, zipGridArgs] = this.#transformZipGridDiv(gridDiv);
+    const [cellDivs, zipGridArgs] = this.transformZipGridDiv(gridDiv);
     const clickSequence = solveZip(...zipGridArgs);
-    this.#clickCells(cellDivs, clickSequence);
+    this.clickCells(cellDivs, clickSequence);
   }
 
-  #transformZipGridDiv(gridDiv) {
+  transformZipGridDiv(gridDiv) {
     const rows = this.getRowsFromGridDiv(gridDiv);
     const cols = this.getColsFromGridDiv(gridDiv);
     const filtered = Array.from(gridDiv.children)
@@ -59,10 +59,130 @@ class ZipDomApi {
   // Synchronously dispatches the computed click events one by one. In-progress
   // puzzles are automatically reset by the click sequence unlike with the other
   // games, so there's no extra check to do here.
-  #clickCells(clickTargets, cellSequence) {
+  clickCells(clickTargets, cellSequence) {
     for (const loc of cellSequence) {
       const clickTarget = clickTargets[loc];
       doOneMouseCycle(clickTarget);
+    }
+  }
+
+}
+
+// Obfuscated DOM makes it impossible to deduce walls; luckily, this variation
+// includes a hydration script that straight up leaks the solution.
+class ZipDomApiV1 extends ZipDomApi {
+
+  autoSolve() {
+    const cellSequence = compressSequence(this.getSolution());
+    const gridDiv = this.getZipGridDiv();
+    const cellDivs = this.transformZipGridDiv(gridDiv)[0];
+    this.clickCellsWithFeedback(cellDivs, cellSequence);
+  }
+
+  getSolution() {
+    const hydrationScript = this.orElseThrow(
+          getGridDiv(d => d.getElementById('rehydrate-data')), 'getSolution',
+          'No script with id rehydrate-data found')
+        .textContent;
+    const indicator = '\\"solution\\"';
+    const anchor = hydrationScript.indexOf(indicator);
+    if (anchor < 0) {
+      this.orElseThrow(null, 'getSolution', 'Failed to locate indicator');
+    }
+    const start = hydrationScript.indexOf('[', anchor + indicator.length);
+    const end = hydrationScript.indexOf(']', start);
+    return JSON.parse(hydrationScript.substring(start, end + 1));
+  }
+
+  getZipGridDiv() {
+    return this.orElseThrow(
+        getGridDiv(d => d.querySelector('[data-testid="interactive-grid"]')),
+        'getZipGridDiv', 'ZipGridDiv selector yielded nothing');
+  }
+
+  getRowsFromGridDiv(gridDiv) {
+    return this.getColsFromGridDiv(gridDiv);
+  }
+
+  getColsFromGridDiv(gridDiv) {
+    const candidates = Object.fromEntries(
+      Array.from(gridDiv.style)
+        .filter(p => p.startsWith("--") && /^\d+$/.test(gridDiv.style.getPropertyValue(p).trim()))
+        .map(p => [p, parseInt(gridDiv.style.getPropertyValue(p))])
+    );
+    const candidateCount = Object.keys(candidates).length;
+    if (candidateCount === 0) {
+      orElseThrow(null, 'getDimensionFromGridDiv', 'No appropriate dimension in gridDiv');
+    } else if (candidateCount > 1) {
+      console.warn('Multiple dimension candidates found in style; dump:', candidates);
+    }
+    const elem = candidates[Object.keys(candidates)[0]];
+    return parseInt(elem);
+  }
+
+  gridDivChildIsCellDiv(gridDivChild) {
+    return gridDivChild.attributes?.getNamedItem('data-cell-idx');
+  }
+
+  getCellDivIdx(cellDiv) {
+    const dataCellIdx = cellDiv.attributes
+        ?.getNamedItem('data-cell-idx')?.value;
+    return parseInt(this.orElseThrow(dataCellIdx, 'getIdFromCellDiv',
+        `Failed to parse an integer data cell ID from ${dataCellIdx}`));
+  }
+
+  getCellDivContent(cellDiv) {
+    const subCellDiv = cellDiv.querySelector('[data-cell-content="true"]');
+    if (subCellDiv) {
+      const parsed = parseInt(subCellDiv.textContent);
+      return this.orElseThrow(Number.isNaN(parsed) ? null : parsed,
+          'getCellDivContent', `Expected number, found ${subCellDiv.textContent}`);
+    }
+    return -1;
+  }
+
+  // TODO: refactor (unused in V1)
+  cellDivHasDownWall(cellDiv) {
+    return false;
+  }
+
+  // TODO: refactor (unused in V1)
+  cellDivHasRightWall(cellDiv) {
+    return false;
+  }
+
+  orElseThrow(result, fname, cause) {
+    if (result != null) {
+      return result;
+    }
+    throw new Error(`${fname} failed using ZipDomApiV1: ${cause}`);
+  }
+
+  // Dispatching clicks blindly is inconsistent in dom V1.
+  async clickCellsWithFeedback(cellDivs, clickSequence) {
+    for (const loc of clickSequence) {
+      await anticipateOneMutation(cellDivs[loc], loc);
+    }
+
+    function anticipateOneMutation(cellDiv, loc) {
+      return new Promise((resolve, reject) => {
+        // Timeout-based cleanup (in case no mutations are observed)
+        let timeoutRef = setTimeout(() => {
+          observer.disconnect();
+          console.error('Timed out anticipating mutation on', cellDiv);
+          return reject(new Error('Timed out trying to clear cell ' + loc));
+        }, 10000);
+        // Clean up (including aforementioned timeout) if mutation is observed
+        const observer = new MutationObserver(() => {
+          clearTimeout(timeoutRef);
+          observer.disconnect();
+          return resolve();
+        });
+        // Register the observer
+        observer.observe(cellDiv, { attributes: true, childList: true, subtree: true });
+        // Kickoff!
+        doOneMouseCycle(cellDiv);
+      });
     }
   }
 
