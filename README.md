@@ -11,6 +11,7 @@ A Firefox- and Chrome-compatible browser plugin to solve the daily LinkedIn Game
 - [Queens](https://www.linkedin.com/games/queens/)
 - [Zip](https://www.linkedin.com/games/zip/)
 - [Tango](https://www.linkedin.com/games/tango/)
+- [Mini-Sudoku](https://www.linkedin.com/games/tango/)
 
 Stay tuned for more!
 
