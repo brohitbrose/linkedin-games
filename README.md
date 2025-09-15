@@ -9,9 +9,9 @@ https://github.com/user-attachments/assets/8c7d7c48-01db-40f8-aa06-ec2156c84417
 A Firefox- and Chrome-compatible browser plugin to solve the daily LinkedIn Games puzzles. Currently supports (note: the links below open https://www.linkedin.com):
 
 - [Queens](https://www.linkedin.com/games/queens/)
+- [Mini-Sudoku](https://www.linkedin.com/games/sudoku/)
 - [Zip](https://www.linkedin.com/games/zip/)
 - [Tango](https://www.linkedin.com/games/tango/)
-- [Mini-Sudoku](https://www.linkedin.com/games/tango/)
 
 Stay tuned for more!
 
@@ -111,12 +111,18 @@ Any counter is at most 2, as in the following example (asterisk identifies a que
 
 </details>
 
+### Mini-Sudoku
+
+The Mini-Sudoku solver uses the exact same baseline algorithm as the prior: explore in a depth-first manner while abiding by all constraints and backtracking as needed, and short-circuit return whenever we achieve the required depth.
+This time, trying unmarked cells in increasing order of possible candidates is helpful to solve puzzles that are specifically designed to take a long time using brute force.
+
+Lots of low-hanging fruit here for strategic improvements, but they're wasted on puzzles that are this small.
+
 ### Zip
 
 <details><summary>(Expand for overview)</summary>
 
-The Zip solver uses the exact same baseline algorithm as the one for Queens: explore in a depth-first manner while abiding by all constraints and backtracking as needed, and short-circuit return whenever we achieve the required depth.
-There are only two noteworthy mentions here:
+The Zip solver uses the exact same baseline algorithm as the prior two puzzle types, with two noteworthy adaptations:
 
 - We perform the backtracking iteratively via a loop and a stack, rather than recursively.
 - We add a cell degree based *path pruning* strategy atop the *explicit rules* (which are themselves few and really only forbid wall-/boundary-crossing paths, self-crossing paths, and premature numbered cell access); see the doc comments for `ZipGrid#canVisitUp` in [solver.js](./src/main/js/zip/solver.js) for a detailed explanation of the pruning strategy.
