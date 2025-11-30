@@ -189,7 +189,7 @@ class QueensDomApiV1 extends QueensDomApi {
         let timeoutRef = setTimeout(() => {
           observer.disconnect();
           console.error('Timed out anticipating mutation on', cellDiv);
-          return reject(new Error('Timed out mutate cell ' + loc));
+          return reject(new Error('Timed out anticipating mutation on cell ' + loc));
         }, 10000);
         // Clean up (including aforementioned timeout) if mutation is observed
         const observer = new MutationObserver(() => {
