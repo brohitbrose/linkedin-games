@@ -113,10 +113,14 @@ Any counter is at most 2, as in the following example (asterisk identifies a que
 
 ### Mini-Sudoku
 
+<details><summary>(Expand for overview)</summary>
+
 The Mini-Sudoku solver uses the exact same baseline algorithm as the prior: explore in a depth-first manner while abiding by all constraints and backtracking as needed, and short-circuit return whenever we achieve the required depth.
 This time, trying unmarked cells in increasing order of possible candidates is helpful to solve puzzles that are specifically designed to take a long time using brute force.
 
 Lots of low-hanging fruit here for strategic improvements, but they're wasted on puzzles that are this small.
+
+</details>
 
 ### Zip
 
