@@ -26,6 +26,7 @@ class QueensDomApi {
     const [cellDivs, queensGridArg, existingMarks] =
         this.#transformQueensGridDiv(gridDiv);
     const queenIndices = solveQueens(queensGridArg);
+    console.info('Solution identified:', queenIndices);
     this.clickQueens(cellDivs, queenIndices, existingMarks);
   }
 
