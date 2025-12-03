@@ -1,4 +1,4 @@
-import { doOneMouseCycle, getGridDiv } from '../util.js';
+import { getGridDiv, anticipateOneMutation } from '../util.js';
 import { learnMarkStrategy } from './markStrategy.js';
 import { solveTango } from './solver.js';
 
@@ -26,6 +26,7 @@ class TangoDomApiV1 {
     // Extract
     const hydrationScript = this.getHydrationScript();
     const solution = this.getSolution(hydrationScript);
+    console.info('Solution identified:', solution);
     const gridSize = this.getGridSize(hydrationScript);
     const cellCount = gridSize * gridSize;
     const presetCells = this.getPresetCells(hydrationScript, cellCount);
@@ -37,7 +38,7 @@ class TangoDomApiV1 {
         clickableCell,
         c => this.getCellDivIsBlank(c));
     // Dispatch
-    this.clickCells(cellDivs, solution, markStrategy, presetCells);
+    await this.clickCells(cellDivs, solution, markStrategy, presetCells);
   }
 
   getHydrationScript() {
@@ -178,27 +179,6 @@ class TangoDomApiV1 {
         await anticipateOneMutation(cellDiv, i);
       }
     }
-
-    async function anticipateOneMutation(cellDiv, loc) {
-      return new Promise((resolve, reject) => {
-        // Timeout-based cleanup (in case no mutations are observed)
-        let timeoutRef = setTimeout(() => {
-          observer.disconnect();
-          console.error('Timed out anticipating mutation on', cellDiv);
-          return reject(new Error('Timed out anticipating mutation on cell ' + loc));
-        }, 10000);
-        // Clean up (including aforementioned timeout) if mutation is observed
-        const observer = new MutationObserver(() => {
-          clearTimeout(timeoutRef);
-          observer.disconnect();
-          return resolve();
-        });
-        // Register the observer
-        observer.observe(cellDiv, { attributes: true, childList: true, subtree: true });
-        // Kickoff!
-        doOneMouseCycle(cellDiv);
-      });
-    }
   }
 
 }
@@ -217,6 +197,7 @@ class TangoDomApiV0 {
     const tangoGridArgs = this.#transformTangoGridDiv(cellDivs, markStrategy);
     // Solve
     const markSequence = solveTango(...tangoGridArgs);
+    console.info('Solution identified:', markSequence);
     // Dispatch
     this.clickCells(cellDivs, markSequence, markStrategy);
   }
@@ -357,27 +338,6 @@ class TangoDomApiV0 {
       for (let i = currentColor; i !== targetColor; i = (i + 1) % 3) {
         await anticipateOneMutation(cellDiv, move.idx);
       }
-    }
-
-    async function anticipateOneMutation(cellDiv, loc) {
-      return new Promise((resolve, reject) => {
-        // Timeout-based cleanup (in case no mutations are observed)
-        let timeoutRef = setTimeout(() => {
-          observer.disconnect();
-          console.error('Timed out anticipating mutation on', cellDiv);
-          return reject(new Error('Timed out anticipating mutation on cell ' + loc));
-        }, 10000);
-        // Clean up (including aforementioned timeout) if mutation is observed
-        const observer = new MutationObserver(() => {
-          clearTimeout(timeoutRef);
-          observer.disconnect();
-          return resolve();
-        });
-        // Register the observer
-        observer.observe(cellDiv, { attributes: true, childList: true, subtree: true });
-        // Kickoff!
-        doOneMouseCycle(cellDiv);
-      });
     }
   }
 
