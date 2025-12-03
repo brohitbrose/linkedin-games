@@ -63,7 +63,6 @@ async function exploreMarkStrategy(blankCell, getCellDivIsBlank) {
     }, 10000);
     observer.observe(blankCell, {
       attributes: true,
-      attributeFilter: ['src'], // FIXME
       subtree: true,
       childList: true
     });
@@ -72,6 +71,10 @@ async function exploreMarkStrategy(blankCell, getCellDivIsBlank) {
     doOneMouseCycle(blankCell);
 
     function observerCallback(mutations, observer) {
+      if (strategy) {
+        resolveStrategy(strategy);
+        return;
+      }
       // Bound the number of times we click the div, even if we learned nothing.
       // 30 click-then-examine cycles should be plenty.
       if (callCount++ >= 30) {
@@ -81,10 +84,6 @@ async function exploreMarkStrategy(blankCell, getCellDivIsBlank) {
             'moonAriaLabel=' + moonLabel);
         resolveStrategy(
             new AriaLabelStrategy('Sun', 'Moon', getCellDivIsBlank));
-        return;
-      }
-      if (strategy) {
-        resolveStrategy(strategy);
         return;
       }
       for (const mutation of mutations) {
@@ -103,8 +102,9 @@ async function exploreMarkStrategy(blankCell, getCellDivIsBlank) {
       }
 
       function tryProcessNode(node) {
+        const tagName = node.tagName?.toLowerCase();
         // Only consider IMG or SVG nodes.
-        if (node instanceof SVGElement || node instanceof HTMLImageElement) {
+        if (tagName && ('img' === tagName || 'svg' === tagName)) {
           const label = node.getAttribute('aria-label');
           if (label) {
             if (!sunLabel) {
@@ -115,6 +115,8 @@ async function exploreMarkStrategy(blankCell, getCellDivIsBlank) {
               moonLabel = label;
               // Hopefully trigger moon -> blank.
               doOneMouseCycle(blankCell);
+              console.info(`Deduced mark strategy with sunLabel=${sunLabel},`,
+                  `moonLabel=${moonLabel}`);
               strategy = new AriaLabelStrategy(
                   sunLabel,
                   moonLabel,

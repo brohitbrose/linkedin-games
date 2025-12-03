@@ -165,8 +165,8 @@ class TangoDomApiV1 {
 
   async clickCells(cellDivs, solution, markStrategy, presetCells) {
     if (cellDivs.length !== solution.length) {
-      throw new Error(`cellDivs length ${cellDivs.length} does not match \
-          solution length ${solution.length}`);
+      throw new Error(`cellDivs length ${cellDivs.length} does not match `
+          + `solution length ${solution.length}`);
     }
     for (let i = 0; i < solution.length; i++) {
       if (presetCells[i]) {
