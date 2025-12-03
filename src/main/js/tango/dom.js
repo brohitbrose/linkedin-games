@@ -150,7 +150,7 @@ class TangoDomApiV1 {
         return 2;
       } else {
         this.orElseThrow(null, 'processSolution',
-            `Unexpected rawSolution entry ${x}`);
+            `Unexpected rawSolution entry ${x} in ${rawSolution}`);
       }
     });
   }
