@@ -25,6 +25,7 @@ class ZipDomApi {
     const gridDiv = this.getZipGridDiv();
     const [cellDivs, zipGridArgs] = this.transformZipGridDiv(gridDiv);
     const clickSequence = solveZip(...zipGridArgs);
+    console.info('Solution identified:', clickSequence);
     this.clickCells(cellDivs, clickSequence);
   }
 
@@ -74,6 +75,7 @@ class ZipDomApiV1 extends ZipDomApi {
 
   autoSolve() {
     const cellSequence = compressSequence(this.getSolution());
+    console.info('Solution identified:', cellSequence);
     const gridDiv = this.getZipGridDiv();
     const cellDivs = this.transformZipGridDiv(gridDiv)[0];
     this.clickCellsWithFeedback(cellDivs, cellSequence);

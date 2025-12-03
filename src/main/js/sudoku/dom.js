@@ -27,6 +27,7 @@ class SudokuDomApi {
     const numberDivs = this.getNumberDivs();
     const [cellDivs, sudokuGrid] = this.#transformSudokuGridDiv(gridDiv);
     const solution = sudokuGrid.solve();
+    console.info('Solution identified:', solution);
     this.doSolve(gameBoardDiv, cellDivs, numberDivs, solution);
   }
 
