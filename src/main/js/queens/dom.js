@@ -82,11 +82,13 @@ class QueensDomApi {
 
 class QueensDomApiV1 extends QueensDomApi {
 
-  autoSolve() {
+  async autoSolve() {
+    // Extract
     const rawSolution = this.getSolution();
     const processedSolution = this.processSolution(rawSolution);
     const gridDiv = this.getQueensGridDiv();
     const [cellDivs, existingMarks] = this.transformQueensGridDiv(gridDiv);
+    // Dispatch
     this.clickCellsWithFeedback(cellDivs, processedSolution, existingMarks);
   }
 
@@ -108,6 +110,8 @@ class QueensDomApiV1 extends QueensDomApi {
 
   processSolution(rawSolution) {
     const n = rawSolution.length;
+    const result = rawSolution.map((x) => n * x.row + x.col);
+    console.info('Solution identified:', result);
     return rawSolution.map((x) => n * x.row + x.col);
   }
 
@@ -183,7 +187,7 @@ class QueensDomApiV1 extends QueensDomApi {
       }
     }
 
-    function anticipateOneMutation(cellDiv, loc) {
+    async function anticipateOneMutation(cellDiv, loc) {
       return new Promise((resolve, reject) => {
         // Timeout-based cleanup (in case no mutations are observed)
         let timeoutRef = setTimeout(() => {
