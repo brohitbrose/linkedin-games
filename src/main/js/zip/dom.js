@@ -1,12 +1,12 @@
-import { doOneMouseCycle, getGridDiv } from '../util.js';
+import { getGridDiv, anticipateOneMutation } from '../util.js';
 import { solveZip, compressSequence } from './solver.js';
 
-export function autoSolve() {
+export async function autoSolve() {
   const prioritizedApis = [new ZipDomApiV1(), new ZipDomApiV0()];
   for (let i = 0; i < prioritizedApis.length; ) {
     const api = prioritizedApis[i];
     try {
-      api.autoSolve();
+      await api.autoSolve();
       return;
     } catch (e) {
       console.error(e);
@@ -21,11 +21,12 @@ export function autoSolve() {
 
 class ZipDomApi {
 
-  autoSolve() {
+  async autoSolve() {
     const gridDiv = this.getZipGridDiv();
     const [cellDivs, zipGridArgs] = this.transformZipGridDiv(gridDiv);
     const clickSequence = solveZip(...zipGridArgs);
-    this.clickCells(cellDivs, clickSequence);
+    console.info('Solution identified:', clickSequence);
+    await this.clickCells(cellDivs, clickSequence);
   }
 
   transformZipGridDiv(gridDiv) {
@@ -56,13 +57,12 @@ class ZipDomApi {
     return [cellDivs, [rows, cols, numberedCells, downWalls, rightWalls]];
   }
 
-  // Synchronously dispatches the computed click events one by one. In-progress
-  // puzzles are automatically reset by the click sequence unlike with the other
-  // games, so there's no extra check to do here.
-  clickCells(clickTargets, cellSequence) {
-    for (const loc of cellSequence) {
-      const clickTarget = clickTargets[loc];
-      doOneMouseCycle(clickTarget);
+  // Dispatches the computed click events one by one. In-progress puzzles are
+  // automatically reset by the click sequence unlike with the other games, so
+  // there is no extra check to do here.
+  async clickCells(cellDivs, clickSequence) {
+    for (const loc of clickSequence) {
+      await anticipateOneMutation(cellDivs[loc], loc);
     }
   }
 
@@ -72,11 +72,12 @@ class ZipDomApi {
 // includes a hydration script that straight up leaks the solution.
 class ZipDomApiV1 extends ZipDomApi {
 
-  autoSolve() {
+  async autoSolve() {
     const cellSequence = compressSequence(this.getSolution());
+    console.info('Solution identified:', cellSequence);
     const gridDiv = this.getZipGridDiv();
     const cellDivs = this.transformZipGridDiv(gridDiv)[0];
-    this.clickCellsWithFeedback(cellDivs, cellSequence);
+    await this.clickCells(cellDivs, cellSequence);
   }
 
   getSolution() {
@@ -158,31 +159,9 @@ class ZipDomApiV1 extends ZipDomApi {
     throw new Error(`${fname} failed using ZipDomApiV1: ${cause}`);
   }
 
-  // Dispatching clicks blindly is inconsistent in dom V1.
-  async clickCellsWithFeedback(cellDivs, clickSequence) {
+  async clickCells(cellDivs, clickSequence) {
     for (const loc of clickSequence) {
       await anticipateOneMutation(cellDivs[loc], loc);
-    }
-
-    function anticipateOneMutation(cellDiv, loc) {
-      return new Promise((resolve, reject) => {
-        // Timeout-based cleanup (in case no mutations are observed)
-        let timeoutRef = setTimeout(() => {
-          observer.disconnect();
-          console.error('Timed out anticipating mutation on', cellDiv);
-          return reject(new Error('Timed out trying to clear cell ' + loc));
-        }, 10000);
-        // Clean up (including aforementioned timeout) if mutation is observed
-        const observer = new MutationObserver(() => {
-          clearTimeout(timeoutRef);
-          observer.disconnect();
-          return resolve();
-        });
-        // Register the observer
-        observer.observe(cellDiv, { attributes: true, childList: true, subtree: true });
-        // Kickoff!
-        doOneMouseCycle(cellDiv);
-      });
     }
   }
 

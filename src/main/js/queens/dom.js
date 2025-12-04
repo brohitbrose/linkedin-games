@@ -1,12 +1,12 @@
-import { doOneMouseCycle, getGridDiv } from '../util.js';
+import { getGridDiv, anticipateOneMutation } from '../util.js';
 import { solveQueens } from './solver.js';
 
-export function autoSolve() {
+export async function autoSolve() {
   const prioritizedApis = [new QueensDomApiV1(), new QueensDomApiV0()];
   for (let i = 0; i < prioritizedApis.length; ) {
     const api = prioritizedApis[i];
     try {
-      api.autoSolve();
+      await api.autoSolve();
       return;
     } catch (e) {
       console.error(e);
@@ -21,12 +21,13 @@ export function autoSolve() {
 
 class QueensDomApi {
 
-  autoSolve() {
+  async autoSolve() {
     const gridDiv = this.getQueensGridDiv();
     const [cellDivs, queensGridArg, existingMarks] =
         this.#transformQueensGridDiv(gridDiv);
     const queenIndices = solveQueens(queensGridArg);
-    this.clickQueens(cellDivs, queenIndices, existingMarks);
+    console.info('Solution identified:', queenIndices);
+    await this.clickQueens(cellDivs, queenIndices, existingMarks);
   }
 
   #transformQueensGridDiv(gridDiv) {
@@ -52,17 +53,12 @@ class QueensDomApi {
     return [cellDivs, queensGridArg, existingMarks];
   }
 
-  // Synchronously dispatches the computed click events one by one.
-  // TODO: Consider asynchronicity. Everything through grid.solve() is extremely
-  //  fast (<1ms). clickQueens() simulates clicking DOM elements 2n times where
-  //  n is the grid dimenion. This process takes ~5ms on my Mac, but could this
-  //  be too fast for the site's logic sometimes?
-  clickQueens(cellDivs, queenLocations, existingMarks) {
+  async clickQueens(cellDivs, queenLocations, existingMarks) {
     // Transform any cells that must be marked as queens to queens.
     for (const loc of queenLocations) {
       const existingMark = existingMarks.get(loc) ?? 0, cellDiv = cellDivs[loc];
       for (let i = existingMark; i < 2; i++) {
-        doOneMouseCycle(cellDiv);
+        await anticipateOneMutation(cellDiv, loc);
       }
       if (existingMark === 2) {
         existingMarks.delete(loc);
@@ -73,7 +69,7 @@ class QueensDomApi {
     // "Auto-x" mode is on.
     for (const [key, value] of existingMarks) {
       if (value === 2) {
-        doOneMouseCycle(cellDivs[key]);
+        await anticipateOneMutation(cellDivs[key], key);
       }
     }
   }
@@ -82,12 +78,14 @@ class QueensDomApi {
 
 class QueensDomApiV1 extends QueensDomApi {
 
-  autoSolve() {
+  async autoSolve() {
+    // Extract
     const rawSolution = this.getSolution();
     const processedSolution = this.processSolution(rawSolution);
     const gridDiv = this.getQueensGridDiv();
     const [cellDivs, existingMarks] = this.transformQueensGridDiv(gridDiv);
-    this.clickCellsWithFeedback(cellDivs, processedSolution, existingMarks);
+    // Dispatch
+    this.clickCells(cellDivs, processedSolution, existingMarks);
   }
 
   getSolution() {
@@ -108,6 +106,8 @@ class QueensDomApiV1 extends QueensDomApi {
 
   processSolution(rawSolution) {
     const n = rawSolution.length;
+    const result = rawSolution.map((x) => n * x.row + x.col);
+    console.info('Solution identified:', result);
     return rawSolution.map((x) => n * x.row + x.col);
   }
 
@@ -162,8 +162,7 @@ class QueensDomApiV1 extends QueensDomApi {
     throw new Error(`${fname} failed using QueensDomApiV1: ${cause}`);
   }
 
-  // Dispatching clicks blindly is inconsistent in dom V1.
-  async clickCellsWithFeedback(cellDivs, clickSequence, existingMarks) {
+  async clickCells(cellDivs, clickSequence, existingMarks) {
     // Transform any cells that must be marked as queens to queens.
     for (const loc of clickSequence) {
       const existingMark = existingMarks.get(loc) ?? 0, cellDiv = cellDivs[loc];
@@ -181,27 +180,6 @@ class QueensDomApiV1 extends QueensDomApi {
       if (value === 2) {
         await anticipateOneMutation(cellDivs[key], key);
       }
-    }
-
-    function anticipateOneMutation(cellDiv, loc) {
-      return new Promise((resolve, reject) => {
-        // Timeout-based cleanup (in case no mutations are observed)
-        let timeoutRef = setTimeout(() => {
-          observer.disconnect();
-          console.error('Timed out anticipating mutation on', cellDiv);
-          return reject(new Error('Timed out anticipating mutation on cell ' + loc));
-        }, 10000);
-        // Clean up (including aforementioned timeout) if mutation is observed
-        const observer = new MutationObserver(() => {
-          clearTimeout(timeoutRef);
-          observer.disconnect();
-          return resolve();
-        });
-        // Register the observer
-        observer.observe(cellDiv, { attributes: true, childList: true, subtree: true });
-        // Kickoff!
-        doOneMouseCycle(cellDiv);
-      });
     }
   }
 
